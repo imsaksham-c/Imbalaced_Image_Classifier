@@ -14,24 +14,23 @@ Examples:
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
-from torchvision.models import resnet50, efficientnet_b3, resnext50_32x4d
+from torchvision.models import resnet50
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 from PIL import Image
 import argparse
-import os
 import json
 from pathlib import Path
 import cv2
 from tqdm import tqdm
 import datetime
 import warnings
+import matplotlib.pyplot as plt
+import pandas as pd
+
+from utils.dataset import get_transforms
 
 warnings.filterwarnings('ignore')
 
-# Set device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
 
@@ -61,72 +60,21 @@ def get_model(model_name, num_classes, fc_layers=None):
                 nn.Linear(model.fc.in_features, num_classes)
             )
             
-    elif model_name == 'resnext50':
-        model = resnext50_32x4d(pretrained=False)
-        if fc_layers:
-            layers = []
-            in_features = model.fc.in_features
-            
-            for i, layer_size in enumerate(fc_layers):
-                layers.extend([
-                    nn.Linear(in_features if i == 0 else fc_layers[i-1], layer_size),
-                    nn.ReLU(inplace=True),
-                    nn.BatchNorm1d(layer_size),
-                    nn.Dropout(0.5)
-                ])
-                in_features = layer_size
-            
-            layers.append(nn.Linear(fc_layers[-1], num_classes))
-            model.fc = nn.Sequential(*layers)
-        else:
-            model.fc = nn.Sequential(
-                nn.Dropout(0.6),
-                nn.Linear(model.fc.in_features, num_classes)
-            )
-            
-    elif model_name == 'efficientnet_b3':
-        model = efficientnet_b3(pretrained=False)
-        if fc_layers:
-            layers = []
-            in_features = model.classifier[1].in_features
-            
-            for i, layer_size in enumerate(fc_layers):
-                layers.extend([
-                    nn.Linear(in_features if i == 0 else fc_layers[i-1], layer_size),
-                    nn.ReLU(inplace=True),
-                    nn.BatchNorm1d(layer_size),
-                    nn.Dropout(0.5)
-                ])
-                in_features = layer_size
-            
-            layers.append(nn.Linear(fc_layers[-1], num_classes))
-            model.classifier = nn.Sequential(*layers)
-        else:
-            model.classifier = nn.Sequential(
-                nn.Dropout(0.6),
-                nn.Linear(model.classifier[1].in_features, num_classes)
-            )
     else:
-        raise ValueError(f"Model {model_name} not supported")
+        raise ValueError(f"Model {model_name} not supported (only resnet50 supported)")
     
     return model.to(device)
 
 
-def get_transforms(image_size=512):
-    """Get image transformations for prediction."""
-    return transforms.Compose([
-        transforms.Resize((image_size, image_size)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
+
 
 
 def load_model(model_path):
     """Load trained model from checkpoint."""
     print(f"Loading model from: {model_path}")
     
-    # Load checkpoint
-    checkpoint = torch.load(model_path, map_location=device)
+    # Load checkpoint with CPU compatibility
+    checkpoint = torch.load(model_path, map_location='cpu')
     
     # Extract model information
     model_name = checkpoint.get('model_name', 'resnet50')

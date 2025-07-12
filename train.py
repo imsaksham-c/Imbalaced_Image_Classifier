@@ -3,11 +3,10 @@ Image Classification Training Script
 ==========================================
 
 This script provides a comprehensive training pipeline for temple image classification
-using various deep learning models (ResNet50, ResNeXt50, EfficientNet-B3) with
-advanced training strategies including staged unfreezing and different loss functions.
+using ResNet50 with advanced training strategies including staged unfreezing and different loss functions.
 
 Features:
-- Multiple model architectures (ResNet50, ResNeXt50, EfficientNet-B3)
+- ResNet50 model architecture
 - Staged unfreezing strategies for transfer learning
 - Weighted Cross Entropy and Focal Loss support
 - Comprehensive training monitoring and visualization
@@ -16,8 +15,8 @@ Features:
 
 Examples:
   python train.py --model resnet50 --batch_size 32 --epochs 50
-  python train.py --model efficientnet_b3 --loss focalloss --unfreeze 2
-  python train.py --model resnext50 --fc_layers 512 256 --unfreeze 1
+  python train.py --model resnet50 --loss focalloss --unfreeze 2
+  python train.py --model resnet50 --fc_layers 512 256 --unfreeze 1
 """
 
 import torch
@@ -25,26 +24,24 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import numpy as np
-import pandas as pd
 from sklearn.metrics import classification_report
 import argparse
-import os
 import json
 import warnings
 import datetime
+import os
 
-# Import utility modules
 from utils import (
     FocalLoss, plot_training_history, plot_confusion_matrix,
-    TempleDataset, load_processed_dataset, calculate_class_weights, 
-    get_weighted_sampler, get_transforms, get_model, set_trainable_layers,
-    train_epoch, validate_epoch
+    get_model, set_trainable_layers, train_epoch, validate_epoch
+)
+from utils.dataset import (
+    TempleDataset, get_transforms, load_processed_dataset,
+    calculate_class_weights, get_weighted_sampler
 )
 
-# Suppress warnings for cleaner output
 warnings.filterwarnings('ignore')
 
-# Global device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"🚀 Using device: {device}")
 
@@ -147,7 +144,7 @@ def train_model(args):
     # ============================================================================
     # MODEL INITIALIZATION
     # ============================================================================
-    print(f"\n🤖 Initializing {args.model} model...")
+    print(f"\n�� Initializing {args.model} model...")
     try:
         model = get_model(args.model, num_classes, fc_layers=args.fc_layers, device=device)
         # Add device attribute to model for training functions
@@ -262,6 +259,7 @@ def train_model(args):
         if f1_weighted > best_f1:
             best_f1 = f1_weighted
             patience_counter = 0
+            # Save model state dict in device-agnostic way
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -288,7 +286,7 @@ def train_model(args):
     print("="*60)
     
     # Load best model and evaluate
-    checkpoint = torch.load(os.path.join(models_dir, f'best_model_{args.model}_unfreeze{args.unfreeze}.pth'))
+    checkpoint = torch.load(os.path.join(models_dir, f'best_model_{args.model}_unfreeze{args.unfreeze}.pth'), map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
     val_loss, val_acc, f1_weighted, f1_macro, predictions, true_labels = validate_epoch(
         model, val_loader, criterion)
@@ -396,8 +394,8 @@ def main():
     
     # Model arguments
     parser.add_argument('--model', type=str, 
-                       choices=['resnet50', 'resnext50', 'efficientnet_b3'], 
-                       default='resnet50', help='Model architecture')
+                       choices=['resnet50'], 
+                       default='resnet50', help='Model architecture (only ResNet50 supported)')
     parser.add_argument('--fc_layers', type=int, nargs='+', default=None,
                        help='Custom FC layer sizes (e.g., 512 256 for 2 hidden layers)')
     

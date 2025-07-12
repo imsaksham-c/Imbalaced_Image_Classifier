@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # train_all.sh - Run all possible combinations of train.py
-# This script runs 18 experiments covering all combinations of:
-# - Models: resnet50, resnext50, efficientnet_b3
+# This script runs 6 experiments covering all combinations of:
+# - Models: resnet50
 # - Loss functions: weightedce, focalloss
 # - Unfreeze modes: 0, 1, 2
 
@@ -108,18 +108,6 @@ print_experiment_list() {
     echo "4.  resnet_focal_0  (ResNet50 + Focal Loss + Unfreeze 0)"
     echo "5.  resnet_focal_1  (ResNet50 + Focal Loss + Unfreeze 1)"
     echo "6.  resnet_focal_2  (ResNet50 + Focal Loss + Unfreeze 2)"
-    echo "7.  resnext_wce_0   (ResNeXt50 + Weighted CE + Unfreeze 0)"
-    echo "8.  resnext_wce_1   (ResNeXt50 + Weighted CE + Unfreeze 1)"
-    echo "9.  resnext_wce_2   (ResNeXt50 + Weighted CE + Unfreeze 2)"
-    echo "10. resnext_focal_0 (ResNeXt50 + Focal Loss + Unfreeze 0)"
-    echo "11. resnext_focal_1 (ResNeXt50 + Focal Loss + Unfreeze 1)"
-    echo "12. resnext_focal_2 (ResNeXt50 + Focal Loss + Unfreeze 2)"
-    echo "13. efficientnet_wce_0   (EfficientNet-B3 + Weighted CE + Unfreeze 0)"
-    echo "14. efficientnet_wce_1   (EfficientNet-B3 + Weighted CE + Unfreeze 1)"
-    echo "15. efficientnet_wce_2   (EfficientNet-B3 + Weighted CE + Unfreeze 2)"
-    echo "16. efficientnet_focal_0 (EfficientNet-B3 + Focal Loss + Unfreeze 0)"
-    echo "17. efficientnet_focal_1 (EfficientNet-B3 + Focal Loss + Unfreeze 1)"
-    echo "18. efficientnet_focal_2 (EfficientNet-B3 + Focal Loss + Unfreeze 2)"
     print_header "=================================================================================="
 }
 
@@ -161,7 +149,7 @@ main() {
     
     # Ask for confirmation
     echo ""
-    read -p "Do you want to proceed with running all 18 experiments? (y/N): " -n 1 -r
+    read -p "Do you want to proceed with running all 6 experiments? (y/N): " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         print_warning "Experiment cancelled by user"
@@ -169,7 +157,7 @@ main() {
     fi
     
     # Initialize tracking variables
-    total_experiments=18
+    total_experiments=6
     successful_experiments=0
     failed_experiments=0
     total_duration=0
@@ -239,125 +227,7 @@ main() {
         ((failed_experiments++))
     fi
     
-    # Experiment 7: ResNeXt50 + Weighted CE + Unfreeze 0
-    experiment_names[6]="resnext_wce_0"
-    if run_experiment "resnext50" "weightedce" "0" "resnext_wce_0"; then
-        results[6]="SUCCESS"
-        ((successful_experiments++))
-    else
-        results[6]="FAILED"
-        ((failed_experiments++))
-    fi
-    
-    # Experiment 8: ResNeXt50 + Weighted CE + Unfreeze 1
-    experiment_names[7]="resnext_wce_1"
-    if run_experiment "resnext50" "weightedce" "1" "resnext_wce_1"; then
-        results[7]="SUCCESS"
-        ((successful_experiments++))
-    else
-        results[7]="FAILED"
-        ((failed_experiments++))
-    fi
-    
-    # Experiment 9: ResNeXt50 + Weighted CE + Unfreeze 2
-    experiment_names[8]="resnext_wce_2"
-    if run_experiment "resnext50" "weightedce" "2" "resnext_wce_2"; then
-        results[8]="SUCCESS"
-        ((successful_experiments++))
-    else
-        results[8]="FAILED"
-        ((failed_experiments++))
-    fi
-    
-    # Experiment 10: ResNeXt50 + Focal Loss + Unfreeze 0
-    experiment_names[9]="resnext_focal_0"
-    if run_experiment "resnext50" "focalloss" "0" "resnext_focal_0"; then
-        results[9]="SUCCESS"
-        ((successful_experiments++))
-    else
-        results[9]="FAILED"
-        ((failed_experiments++))
-    fi
-    
-    # Experiment 11: ResNeXt50 + Focal Loss + Unfreeze 1
-    experiment_names[10]="resnext_focal_1"
-    if run_experiment "resnext50" "focalloss" "1" "resnext_focal_1"; then
-        results[10]="SUCCESS"
-        ((successful_experiments++))
-    else
-        results[10]="FAILED"
-        ((failed_experiments++))
-    fi
-    
-    # Experiment 12: ResNeXt50 + Focal Loss + Unfreeze 2
-    experiment_names[11]="resnext_focal_2"
-    if run_experiment "resnext50" "focalloss" "2" "resnext_focal_2"; then
-        results[11]="SUCCESS"
-        ((successful_experiments++))
-    else
-        results[11]="FAILED"
-        ((failed_experiments++))
-    fi
-    
-    # Experiment 13: EfficientNet-B3 + Weighted CE + Unfreeze 0
-    experiment_names[12]="efficientnet_wce_0"
-    if run_experiment "efficientnet_b3" "weightedce" "0" "efficientnet_wce_0"; then
-        results[12]="SUCCESS"
-        ((successful_experiments++))
-    else
-        results[12]="FAILED"
-        ((failed_experiments++))
-    fi
-    
-    # Experiment 14: EfficientNet-B3 + Weighted CE + Unfreeze 1
-    experiment_names[13]="efficientnet_wce_1"
-    if run_experiment "efficientnet_b3" "weightedce" "1" "efficientnet_wce_1"; then
-        results[13]="SUCCESS"
-        ((successful_experiments++))
-    else
-        results[13]="FAILED"
-        ((failed_experiments++))
-    fi
-    
-    # Experiment 15: EfficientNet-B3 + Weighted CE + Unfreeze 2
-    experiment_names[14]="efficientnet_wce_2"
-    if run_experiment "efficientnet_b3" "weightedce" "2" "efficientnet_wce_2"; then
-        results[14]="SUCCESS"
-        ((successful_experiments++))
-    else
-        results[14]="FAILED"
-        ((failed_experiments++))
-    fi
-    
-    # Experiment 16: EfficientNet-B3 + Focal Loss + Unfreeze 0
-    experiment_names[15]="efficientnet_focal_0"
-    if run_experiment "efficientnet_b3" "focalloss" "0" "efficientnet_focal_0"; then
-        results[15]="SUCCESS"
-        ((successful_experiments++))
-    else
-        results[15]="FAILED"
-        ((failed_experiments++))
-    fi
-    
-    # Experiment 17: EfficientNet-B3 + Focal Loss + Unfreeze 1
-    experiment_names[16]="efficientnet_focal_1"
-    if run_experiment "efficientnet_b3" "focalloss" "1" "efficientnet_focal_1"; then
-        results[16]="SUCCESS"
-        ((successful_experiments++))
-    else
-        results[16]="FAILED"
-        ((failed_experiments++))
-    fi
-    
-    # Experiment 18: EfficientNet-B3 + Focal Loss + Unfreeze 2
-    experiment_names[17]="efficientnet_focal_2"
-    if run_experiment "efficientnet_b3" "focalloss" "2" "efficientnet_focal_2"; then
-        results[17]="SUCCESS"
-        ((successful_experiments++))
-    else
-        results[17]="FAILED"
-        ((failed_experiments++))
-    fi
+
     
     # Calculate total duration
     overall_end_time=$(date +%s)

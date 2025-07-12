@@ -1,3 +1,23 @@
+"""
+Temple Image Classifier Ensemble Training Script
+===============================================
+
+This script trains an ensemble of ResNet50 and EfficientNet-B3 models using
+Class-Balanced Focal Loss for improved performance on imbalanced datasets.
+
+Features:
+- Ensemble of ResNet50 and EfficientNet-B3 models
+- Class-Balanced Focal Loss for handling class imbalance
+- Staged unfreezing for transfer learning
+- Ensemble prediction by averaging softmax outputs
+- Comprehensive training monitoring and visualization
+
+Examples:
+  python train_ensamble.py --data_dir processed_dataset --batch_size 32 --epochs 50
+  python train_ensamble.py --lr 1e-4 --gamma 2.5 --beta 0.9999
+  python train_ensamble.py --save_dir ./ensemble_models --epochs 100
+"""
+
 import torch
 import torch.nn as nn
 import torch.optim as optim

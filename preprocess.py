@@ -7,6 +7,11 @@ Preprocesses image datasets for deep learning training by:
 - Splitting into train/validation sets
 - Applying data augmentation based on class sizes
 - Normalizing and resizing images
+
+Examples:
+  python preprocess.py --dataset ./my_dataset
+  python preprocess.py --dataset ./dataset --output ./processed_data
+  python preprocess.py --dataset ./dataset --image_size 224
 """
 
 import os
@@ -203,7 +208,7 @@ class DatasetPreprocessor:
         split_path = self.train_path if split_name == 'train' else self.valid_path
         
         # Create class directories
-        for class_name in self.dataset_stats['class_counts'].keys():
+        for _, class_name in image_list:
             (split_path / class_name).mkdir(exist_ok=True)
         
         processed_count = 0
@@ -336,32 +341,13 @@ def get_final_statistics(preprocessor):
     }
 
 
-def main():
-    """Main function with command-line arguments."""
+def run_preprocessing(args):
+    """
+    Main preprocessing function that handles the preprocessing logic.
     
-    parser = argparse.ArgumentParser(
-        description='Dataset Preprocessing Script',
-        epilog="""
-Examples:
-  python preprocess.py --dataset ./my_dataset
-  python preprocess.py --dataset ./dataset --output ./processed_data
-  python preprocess.py --dataset ./dataset --image_size 224
-        """
-    )
-    
-    parser.add_argument('--dataset', type=str, default='./dataset',
-                       help='Path to input dataset directory (default: ./dataset)')
-    parser.add_argument('--output', type=str, default='./processed_dataset',
-                       help='Path to output directory (default: ./processed_dataset)')
-    parser.add_argument('--test_size', type=float, default=0.2,
-                       help='Validation split ratio (default: 0.2)')
-    parser.add_argument('--image_size', type=int, default=512,
-                       help='Image size for resizing (default: 512)')
-    parser.add_argument('--overwrite', action='store_true',
-                       help='Overwrite existing output directory')
-    
-    args = parser.parse_args()
-    
+    Args:
+        args: Parsed command line arguments
+    """
     print("Dataset Preprocessing Script")
     print("=" * 50)
     
@@ -369,14 +355,14 @@ Examples:
     dataset_path = Path(args.dataset)
     if not dataset_path.exists():
         print(f"Error: Dataset path does not exist: {dataset_path}")
-        return
+        return False
     
     # Check output directory
     output_path = Path(args.output)
     if output_path.exists() and not args.overwrite:
         print(f"Error: Output directory already exists: {output_path}")
         print(f"Use --overwrite flag to overwrite")
-        return
+        return False
     
     if output_path.exists() and args.overwrite:
         print(f"Removing existing output directory: {output_path}")
@@ -397,9 +383,39 @@ Examples:
         print(f"Output directory: {output_path}")
         print("=" * 50)
         
+        return True
+        
     except Exception as e:
         print(f"Error during preprocessing: {e}")
-        return
+        return False
+
+
+def main():
+    """
+    Main function that handles argument parsing and calls the preprocessing function.
+    """
+    # ============================================================================
+    # ARGUMENT PARSING
+    # ============================================================================
+    parser = argparse.ArgumentParser(
+        description='Dataset Preprocessing Script'
+    )
+    
+    parser.add_argument('--dataset', type=str, default='./dataset',
+                       help='Path to input dataset directory (default: ./dataset)')
+    parser.add_argument('--output', type=str, default='./processed_dataset',
+                       help='Path to output directory (default: ./processed_dataset)')
+    parser.add_argument('--test_size', type=float, default=0.2,
+                       help='Validation split ratio (default: 0.2)')
+    parser.add_argument('--image_size', type=int, default=512,
+                       help='Image size for resizing (default: 512)')
+    parser.add_argument('--overwrite', action='store_true',
+                       help='Overwrite existing output directory')
+    
+    args = parser.parse_args()
+    
+    # Call the preprocessing function
+    run_preprocessing(args)
 
 
 if __name__ == "__main__":

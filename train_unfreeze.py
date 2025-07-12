@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 import torchvision.transforms as transforms
-from torchvision.models import resnet50, efficientnet_b3
+from torchvision.models import resnet50, efficientnet_b3, resnext50_32x4d
 import timm
 import numpy as np
 import pandas as pd
@@ -81,6 +81,12 @@ def get_model(model_name, num_classes, pretrained=True):
             nn.Dropout(0.6),
             nn.Linear(model.classifier[1].in_features, num_classes)
         )
+    elif model_name == 'resnext50_32x4d':
+        model = resnext50_32x4d(pretrained=pretrained)
+        model.fc = nn.Sequential(
+            nn.Dropout(0.6),
+            nn.Linear(model.fc.in_features, num_classes)
+        )
     else:
         raise ValueError(f"Model {model_name} not supported")
     return model.to(device)
@@ -123,7 +129,7 @@ def set_trainable_layers(model, stage):
                 param.requires_grad = False
     elif stage == 2:
         for name, param in model.named_parameters():
-            if 'resnet' in str(type(model)).lower():
+            if 'resnet' in str(type(model)).lower() or 'resnext' in str(type(model)).lower():
                 # Unfreeze all of layer4
                 if 'layer4' in name or 'fc' in name:
                     param.requires_grad = True
@@ -229,7 +235,7 @@ def plot_confusion_matrix(y_true, y_pred, class_names):
 def main():
     parser = argparse.ArgumentParser(description='Temple Image Classifier Training (with staged unfreezing)')
     parser.add_argument('--data_dir', type=str, required=False, default='processed_dataset', help='Path to processed dataset directory')
-    parser.add_argument('--model', type=str, choices=['resnet50', 'efficientnet_b3'], 
+    parser.add_argument('--model', type=str, choices=['resnet50', 'efficientnet_b3', 'resnext50_32x4d'], 
                        default='resnet50', help='Model architecture')
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size')
     parser.add_argument('--epochs', type=int, default=50, help='Number of epochs')

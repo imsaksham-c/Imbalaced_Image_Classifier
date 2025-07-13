@@ -76,6 +76,12 @@ class DatasetPreprocessor:
             print(f"Validation images: {len(valid_images)}")
             print(f"Test images: {len(test_images)}")
             print(f"Total: {len(train_images) + len(valid_images) + len(test_images)}")
+            
+            # Store split information for comparison
+            self.dataset_stats['train_images'] = train_images
+            self.dataset_stats['valid_images'] = valid_images
+            self.dataset_stats['test_images'] = test_images
+            
             self.process_split(train_images, 'train', class_counts)
             self.process_split(valid_images, 'valid', class_counts, augment=False)
             self.process_split(test_images, 'test', class_counts, augment=False)
@@ -85,6 +91,11 @@ class DatasetPreprocessor:
             print(f"Training images: {len(train_images)}")
             print(f"Validation images: {len(valid_images)}")
             print(f"Total: {len(train_images) + len(valid_images)}")
+            
+            # Store split information for comparison
+            self.dataset_stats['train_images'] = train_images
+            self.dataset_stats['valid_images'] = valid_images
+            
             self.process_split(train_images, 'train', class_counts)
             self.process_split(valid_images, 'valid', class_counts, augment=False)
         
@@ -152,8 +163,10 @@ class DatasetPreprocessor:
         print("📊 BEFORE vs AFTER PREPROCESSING COMPARISON")
         print("="*80)
         
-        # Get original counts
-        original_counts = self.dataset_stats['class_counts']
+        # Calculate training set counts before augmentation (after splitting)
+        train_before_counts = {}
+        for img_path, class_name in self.dataset_stats['train_images']:
+            train_before_counts[class_name] = train_before_counts.get(class_name, 0) + 1
         
         # Calculate total processed images
         total_processed = 0
@@ -172,57 +185,42 @@ class DatasetPreprocessor:
         
         # Print summary
         print(f"\n📈 SUMMARY:")
-        print(f"   Original dataset: {self.dataset_stats['total_images']} images")
-        print(f"   Processed dataset: {total_processed} images")
-        print(f"   Increase: {total_processed - self.dataset_stats['total_images']} images ({((total_processed - self.dataset_stats['total_images']) / self.dataset_stats['total_images'] * 100):.1f}%)")
-        
+        print(f"   Training set (before augmentation): {sum(train_before_counts.values())} images")
+        print(f"   Training set (after augmentation): {train_processed} images")
+        print(f"   Training increase: {train_processed - sum(train_before_counts.values())} images ({((train_processed - sum(train_before_counts.values())) / sum(train_before_counts.values()) * 100):.1f}%)")
+        print(f"   Validation set: {valid_processed} images (no augmentation)")
         if self.test_split:
-            print(f"   Train: {train_processed} images")
-            print(f"   Valid: {valid_processed} images")
-            print(f"   Test: {test_processed} images")
-        else:
-            print(f"   Train: {train_processed} images")
-            print(f"   Valid: {valid_processed} images")
+            print(f"   Test set: {test_processed} images (no augmentation)")
+        print(f"   Total processed: {total_processed} images")
         
-        # Print detailed class comparison
-        print(f"\n📋 DETAILED CLASS COMPARISON:")
-        print(f"{'Class':<25} {'Original':<10} {'Processed':<10} {'Increase':<10} {'Rate':<8}")
+        # Print detailed class comparison (training set only)
+        print(f"\n📋 DETAILED TRAINING SET COMPARISON:")
+        print(f"{'Class':<25} {'Before Aug':<10} {'After Aug':<10} {'Increase':<10} {'Rate':<8}")
         print("-" * 65)
         
-        for class_name in sorted(original_counts.keys()):
-            original = original_counts[class_name]
-            processed = 0
+        for class_name in sorted(train_before_counts.keys()):
+            before = train_before_counts[class_name]
+            after = self.processed_stats['train'].get(class_name, 0) if hasattr(self, 'processed_stats') else before
             
-            # Sum up processed images for this class across all splits
-            if hasattr(self, 'processed_stats'):
-                for split_name, split_counts in self.processed_stats.items():
-                    if class_name in split_counts:
-                        processed += split_counts[class_name]
+            increase = after - before
+            rate = (increase / before * 100) if before > 0 else 0
             
-            increase = processed - original
-            rate = (increase / original * 100) if original > 0 else 0
-            
-            print(f"{class_name:<25} {original:<10} {processed:<10} {increase:<10} {rate:>6.1f}%")
+            print(f"{class_name:<25} {before:<10} {after:<10} {increase:<10} {rate:>6.1f}%")
         
-        # Calculate class imbalance ratios
-        print(f"\n⚖️  CLASS IMBALANCE ANALYSIS:")
-        original_max = max(original_counts.values())
-        original_min = min(original_counts.values())
-        original_ratio = original_max / original_min if original_min > 0 else float('inf')
+        # Calculate class imbalance ratios (training set only)
+        print(f"\n⚖️  TRAINING SET IMBALANCE ANALYSIS:")
+        before_max = max(train_before_counts.values())
+        before_min = min(train_before_counts.values())
+        before_ratio = before_max / before_min if before_min > 0 else float('inf')
         
-        if hasattr(self, 'processed_stats'):
-            all_processed = {}
-            for split_counts in self.processed_stats.values():
-                for class_name, count in split_counts.items():
-                    all_processed[class_name] = all_processed.get(class_name, 0) + count
+        if hasattr(self, 'processed_stats') and 'train' in self.processed_stats:
+            after_max = max(self.processed_stats['train'].values())
+            after_min = min(self.processed_stats['train'].values())
+            after_ratio = after_max / after_min if after_min > 0 else float('inf')
             
-            processed_max = max(all_processed.values())
-            processed_min = min(all_processed.values())
-            processed_ratio = processed_max / processed_min if processed_min > 0 else float('inf')
-            
-            print(f"   Original imbalance ratio: {original_ratio:.1f}x ({original_max}/{original_min})")
-            print(f"   Processed imbalance ratio: {processed_ratio:.1f}x ({processed_max}/{processed_min})")
-            print(f"   Improvement: {((original_ratio - processed_ratio) / original_ratio * 100):.1f}% reduction in imbalance")
+            print(f"   Before augmentation: {before_ratio:.1f}x ({before_max}/{before_min})")
+            print(f"   After augmentation: {after_ratio:.1f}x ({after_max}/{after_min})")
+            print(f"   Improvement: {((before_ratio - after_ratio) / before_ratio * 100):.1f}% reduction in imbalance")
         
         print("="*80)
 

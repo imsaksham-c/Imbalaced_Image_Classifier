@@ -235,11 +235,11 @@ def get_albumentations_transforms(image_size=512):
         ),
         # Weather/atmospheric effects (realistic for outdoor temples)
         A.GaussNoise(
-            var_limit=(8, 25),      # Reduced from (10, 30)
+            var_limit=(8.0, 25.0),  # Fixed: use float values
             p=0.3                   # Increased from 0.2
         ),
         A.Blur(
-            blur_limit=2,           # Reduced from 3 - preserve details
+            blur_limit=(3, 3),      # Fixed: use valid kernel size range
             p=0.15                  # Increased from 0.1
         ),
         # Temple-specific augmentations

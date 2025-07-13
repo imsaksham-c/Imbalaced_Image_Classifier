@@ -286,7 +286,7 @@ def main():
         description='Dataset Preprocessing Script'
     )
     
-    parser.add_argument('--dataset', type=str, default='./dataset',
+    parser.add_argument('--dataset', type=str, default='./train',
                        help='Path to input dataset directory (default: ./dataset)')
     parser.add_argument('--output', type=str, default='./processed_dataset',
                        help='Path to output directory (default: ./processed_dataset)')

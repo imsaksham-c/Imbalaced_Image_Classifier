@@ -1,0 +1,32 @@
+{
+  "model": "resnet50",
+  "batch_size": 32,
+  "epochs": 50,
+  "loss_function": "focalloss",
+  "unfreeze_mode": 1,
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "gamma": 2.0,
+  "fc_layers": null,
+  "data_dir": "processed_dataset",
+  "experiment_name": "resnet_focal_1",
+  "num_classes": 11,
+  "class_names": [
+    "Armenia",
+    "Australia",
+    "Germany",
+    "Hungary+Slovakia+Croatia",
+    "Indonesia-Bali",
+    "Japan",
+    "Malaysia+Indonesia",
+    "Portugal+Brazil",
+    "Russia",
+    "Spain",
+    "Thailand"
+  ],
+  "final_metrics": {
+    "best_f1_weighted": 0.8868031651956108,
+    "final_accuracy": 89.1304347826087,
+    "final_f1_macro": 0.8808569138233465
+  }
+}

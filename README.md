@@ -2,206 +2,73 @@
 
 This project provides a complete pipeline for temple image classification using a custom, multi-class dataset. The repository includes advanced preprocessing techniques, sophisticated training strategies, and comprehensive solutions for handling class imbalance and improving model convergence.
 
-## 🎯 Key Technical Innovations
+## Requirements
 
-This project implements several advanced techniques to handle the challenging imbalanced temple dataset:
+It is recommended to use a virtual environment for this project. To set up your environment and install all necessary dependencies, run:
 
-### 1. **Adaptive Preprocessing with Weighted Augmentation**
-- **Dynamic Image Size**: Configurable image resolution (default 512x512) for optimal feature extraction
-- **Class-Aware Augmentation**: Aggressive augmentation for smaller classes, minimal for larger classes
-- **Simple 4-Condition Augmentation Strategy** (optimized for weighted loss):
-  - Classes with ≥80 images: 20% augmentation rate, 1 augmentation per image
-  - Classes with ≥50 images: 40% augmentation rate, 1 augmentation per image  
-  - Classes with ≥25 images: 60% augmentation rate, 1 augmentation per image
-  - Classes with <25 images: 80% augmentation rate, 1 augmentation per image
-- **Comprehensive Augmentation Pipeline**: Horizontal flip, rotation, shift-scale-rotate, brightness/contrast adjustment, gamma correction, hue/saturation shifts, noise injection, and blur
+```bash
+python -m venv toptal
+source toptal/bin/activate  # On Windows use: toptal\Scripts\activate
+pip install -r requirements.txt
+```
 
-### 2. **Advanced Transfer Learning with Staged Unfreezing**
-- **Progressive Unfreezing**: Prevents catastrophic forgetting and enables gradual feature adaptation
-- **Adaptive Learning Rate**: LR reduction by 10x at each stage transition
-- **Gradient Clipping**: Prevents gradient explosion with max_norm=1.0
+## 1. Intro
 
-### 3. **Sophisticated Class Imbalance Handling**
-- **Weighted Random Sampling**: Ensures balanced batch composition during training
-- **Class Weight Calculation**: Inverse frequency weighting for loss function
-- **Focal Loss Implementation**: Focuses training on hard examples with configurable gamma parameter
-- **Multi-Metric Evaluation**: F1-weighted, F1-macro, and accuracy tracking
+This repository provides a robust solution for temple image classification, featuring advanced preprocessing, transfer learning, and class imbalance handling. The pipeline is designed for flexibility and high performance on challenging, imbalanced datasets.
 
-### 4. **Advanced Training Optimizations**
-- **AdamW Optimizer**: Better weight decay implementation for regularization
-- **ReduceLROnPlateau Scheduler**: Adaptive learning rate based on validation F1 score
-- **Early Stopping**: Prevents overfitting with patience-based stopping
-- **Model Checkpointing**: Saves best model based on validation F1 score
+## 2. Quick Start Guide
 
-## Dataset Overview
-
-The dataset consists of temple images from various countries and regions, organized by folder:
-
-| Country/Region                | Number of Images |
-|-------------------------------|---------------------|
-| Armenia                       | 11                  |
-| Australia                     | 36                  |
-| Germany                       | 90                  |
-| Hungary+Slovakia+Croatia      | 48                  |
-| Indonesia-Bali                | 44                  |
-| Japan                         | 60                  |
-| Malaysia+Indonesia            | 56                  |
-| Portugal+Brazil               | 54                  |
-| Russia                        | 100                 |
-| Spain                         | 65                  |
-| Thailand                      | 101                 |
-
-Each folder is a class label containing images from that region.
-
-## Project Structure
-
-### Preprocessing (`preprocess.py`)
-
-- **Smart Dataset Scanning**: Automatically detects class structure and calculates class distribution
-- **Adaptive Data Splitting**: Ensures each class has representation in train/validation sets
-- **Class-Aware Augmentation**: Implements weighted augmentation based on class sizes
-- **Image Normalization**: Uses ImageNet statistics for optimal transfer learning
-- **Configurable image size** (default: 512x512)
-- **Robust error handling** for corrupted images
-
-
-
-### Training Scripts
-
-| Script                | Model(s)           | Loss Function(s)             | Unfreezing Strategy           | Class Imbalance Handling           | Advanced Features            |
-|-----------------------|--------------------|------------------------------|-------------------------------|------------------------------------|------------------------------|
-| train.py              | ResNet50           | Weighted CE / Focal Loss     | Configurable (0-2 stages)     | Class weights, Focal Loss          | Baseline with all optimizations |
-| train_all.sh          | ResNet50           | All combinations             | All strategies (0-2)          | Comprehensive handling             | Automated experiment runner |
-
-## Advanced Training Features
-
-### **Unfreezing Strategies (Configurable via `--unfreeze` parameter)**
-
-#### **Mode 0: Feature Extraction**
-- **Description**: Only classifier layers trainable, backbone frozen
-- **Use Case**: Quick baseline training, feature extraction
-- **Benefits**: Fast training, prevents overfitting on small datasets
-
-#### **Mode 1: Two-Stage Unfreezing**
-- **Stage 1 (Epochs 0-14)**: Only classifier layers trainable
-- **Stage 2 (Epochs 15+)**: Unfreezes deepest backbone block (layer4)
-- **Use Case**: Standard transfer learning approach
-- **Benefits**: Gradual adaptation, prevents catastrophic forgetting
-
-#### **Mode 2: Three-Stage Progressive Unfreezing**
-- **Stage 1 (Epochs 0-14)**: Only classifier layers trainable
-- **Stage 2 (Epochs 15-29)**: Unfreezes layer4 (deepest features)
-- **Stage 3 (Epochs 30+)**: All layers trainable
-- **Use Case**: Advanced transfer learning for complex datasets
-- **Benefits**: Maximum feature adaptation, optimal for imbalanced data
-
-### **Loss Functions**
-
-- **Weighted Cross Entropy**: Standard CE with inverse class frequency weights
-- **Focal Loss**: Custom implementation with configurable gamma (default: 2.0)
-
-## Quick Start Guide
-
-### **Step 1: Download Dataset**
+### Download Dataset
 ```bash
 gdown --fuzzy "https://drive.google.com/file/d/1ccqGu9r815WvgHAlG2CujzUPOEW_Pvo9/view?usp=sharing"
 ```
 
-### **Step 2: Preprocess Data**
+### Preprocess Data
 ```bash
 python preprocess.py --dataset ./dataset --output ./processed_dataset --image_size 512
 ```
 
-### **Step 3: Train Model**
-
-#### **Quick Baseline**
+### Train Mode
 ```bash
-python train.py --model resnet50 --batch_size 32 --epochs 50 --loss weightedce
+python train.py --model resnet50 --batch_size 32 --epochs 50 --loss weightedce --unfreeze 1
 ```
 
-#### **Advanced Training**
+### Run Predictions
+
+#### Predict a Single Image
 ```bash
-python train.py --model resnet50 --batch_size 32 --epochs 50 --loss focalloss --gamma 2.0 --unfreeze 2
+python predict.py --model_path ./models/best_model.pth --image_path ./test_image.jpg
 ```
-
-#### **Run All Experiments**
 ```bash
-chmod +x train_all.sh
-./train_all.sh
+python predict.py --model_path ./models/best_model.pth --folder_path ./test_images/
 ```
 
-### **Key Parameters**
+## 3. Best Model Performance
 
-| Parameter | Options | Description |
-|-----------|---------|-------------|
-| `--unfreeze` | 0, 1, 2 | Unfreezing strategy (0=feature extraction, 1=two-stage, 2=three-stage) |
-| `--loss` | weightedce, focalloss | Loss function choice |
-| `--gamma` | float (default: 2.0) | Focal loss focusing parameter |
-| `--batch_size` | int (default: 32) | Training batch size |
-| `--epochs` | int (default: 50) | Number of training epochs |
-| `--lr` | float (default: 1e-3) | Learning rate |
-| `--fc_layers` | int list | Custom FC layer sizes (e.g., 512 256) |
+### Best Model Details - Resnet50 WeightedCrossEntropy Freeze 1
 
-## Outputs
+(See: models/logs/classification_report.txt)
 
-- **Model Checkpoints**: Best models saved based on validation F1 score
-- **Training Logs**: Detailed JSON files with all metrics and configuration
-- **Visualization Plots**: Training/validation curves, F1 scores, confusion matrices
-- **Classification Reports**: Detailed per-class performance analysis
+#### Per-Class Scores:
+| Class Name                  | F1 Score | Precision | Recall | Support |
+|-----------------------------|----------|-----------|--------|---------|
+| Armenia                     | 1.00     | 1.00      | 1.00   | 2       |
+| Australia                   | 0.88     | 0.78      | 1.00   | 7       |
+| Germany                     | 0.87     | 0.94      | 0.81   | 21      |
+| Hungary+Slovakia+Croatia    | 0.53     | 0.67      | 0.44   | 9       |
+| Indonesia-Bali              | 1.00     | 1.00      | 1.00   | 9       |
+| Japan                       | 1.00     | 1.00      | 1.00   | 12      |
+| Malaysia+Indonesia          | 0.96     | 0.92      | 1.00   | 11      |
+| Portugal+Brazil             | 0.83     | 0.71      | 1.00   | 10      |
+| Russia                      | 0.94     | 0.96      | 0.92   | 24      |
+| Spain                       | 0.85     | 0.85      | 0.85   | 13      |
+| Thailand                    | 1.00     | 1.00      | 1.00   | 20      |
 
-```
-models/
-├── experiment_name/
-│   ├── models/          # Model checkpoints
-│   ├── plots/           # Training visualizations
-│   ├── logs/            # Training history and reports
-│   └── config.json      # Experiment configuration
-```
+![Training History](models/plots/training_history.png)
 
-## Technical Details
+*Figure: Training and validation loss, accuracy, and F1 score history for the best model (Resnet50 WeightedCrossEntropy Freeze 1).*
 
-### **Model Architecture**
-- **Backbone**: ResNet50 with ImageNet pretrained weights
-- **Classifier**: Configurable FC layers with dropout and batch normalization
-
-### **Training Optimizations**
-- **Gradient Clipping**: Prevents gradient explosion (max_norm=1.0)
-- **Weighted Sampling**: Ensures balanced batch composition
-- **Learning Rate Scheduling**: ReduceLROnPlateau with patience=3, factor=0.5
-- **Early Stopping**: Prevents overfitting with patience=10 epochs
-
-### **System Requirements**
-- **Dependencies**: PyTorch, torchvision, albumentations, scikit-learn, matplotlib, seaborn
-- **Hardware**: GPU recommended for training (automatic CPU fallback)
-- **Memory**: 8GB+ RAM recommended for batch_size=32
-
-## Device Compatibility
-
-- **Universal Compatibility**: Models work on GPU or CPU automatically
-- **No Conversion Needed**: Same scripts work on any device
-
-## Performance Summary
-
-### **Key Techniques**
-- **Adaptive Augmentation**: Class-size based augmentation rates
-- **Staged Unfreezing**: Progressive backbone unfreezing
-- **Focal Loss**: Custom implementation with gamma=2.0
-- **Weighted Sampling**: Inverse frequency sampling
-- **Gradient Clipping**: max_norm=1.0
-- **Adaptive LR**: ReduceLROnPlateau scheduler
-- **Early Stopping**: Patience-based stopping
-
-### **Recommended Strategy**
-1. **Start**: `--unfreeze 0 --loss weightedce` (baseline)
-2. **Standard**: `--unfreeze 1 --loss focalloss --gamma 2.0`
-3. **Advanced**: `--unfreeze 2 --loss focalloss --gamma 2.0`
-
-### **Expected Improvements**
-- **Class Imbalance**: 15-25% improvement in minority class accuracy
-- **Staged Unfreezing**: 10-20% improvement in overall accuracy
-- **Combined**: 25-40% improvement over baseline methods
-
-## All Models Performance Summary
+## 4. All Model Performance
 
 | Experiment        | Model   | Loss        | Unfreeze | Best F1         | Final Acc (%)      |
 |------------------|---------|-------------|----------|-----------------|--------------------|
@@ -212,8 +79,52 @@ models/
 | resnet_wce_0     | resnet50| weightedce  | 0        | 0.871163284456192 | 86.96             |
 | resnet_focal_0   | resnet50| focalloss   | 0        | 0.8485570797925289 | 84.06             |
 
+![All Models Comparison - Training Metrics](misc/all_models/all_models_comprehensive_comparison.png)
+
+*Figure: Comprehensive comparison of training loss, validation loss, accuracy, F1 score, and final performance for all model experiments (resnet_focal_2, resnet_focal_1, resnet_wce_2, resnet_focal_0, resnet_wce_0, resnet_wce_1).*
+
 > **Note:**
 > - **Best F1**: Highest weighted F1 score achieved during training.
 > - **Final Acc (%)**: Final validation accuracy (percentage).
 > - **Unfreeze**: 0 = feature extraction, 1 = two-stage unfreezing, 2 = three-stage unfreezing.
 > - **All experiments used image size 512x512.**
+
+## 5. Key Technical Innovations/Technical Details
+
+### 1. Adaptive Preprocessing
+- **Dynamic Image Sizing:** All images are resized to a configurable resolution (default 512x512) for consistent feature extraction.
+- **Class-Aware Augmentation:** The augmentation rate is dynamically adjusted based on class size:
+  - Large classes (≥80 images): Minimal augmentation (20%)
+  - Medium-large (≥50): Light augmentation (40%)
+  - Medium (≥25): Moderate augmentation (60%)
+  - Small (<25): Heavy augmentation (80%)
+- **Augmentation Pipeline:** Uses albumentations for a rich set of transformations:
+  - Geometric: Horizontal flip, random rotation, shift-scale-rotate
+  - Lighting: Random brightness/contrast, gamma correction
+  - Color: Hue/saturation/value shifts
+  - Noise/Blur: Gaussian noise, blur, CLAHE for detail enhancement
+- **Robust Data Splitting:** Ensures every class is represented in train/validation splits, even for rare classes.
+- **Error Handling:** Corrupted images are detected and replaced with blank images to prevent training crashes.
+
+### 2. Class Imbalance Handling
+- **Weighted Random Sampling:** Each batch is balanced using a sampler that gives higher probability to minority classes.
+- **Class Weights in Loss:** Loss functions (cross-entropy, focal loss) are weighted inversely to class frequency, so rare classes have more influence.
+- **Focal Loss:** Custom implementation that focuses learning on hard-to-classify examples, with a tunable gamma parameter.
+- **Multi-Metric Evaluation:** Tracks F1 (macro, weighted) and accuracy to ensure fair assessment across all classes.
+
+### 3. Training Optimizations
+- **Optimizer:** Uses AdamW for better weight decay and generalization.
+- **Learning Rate Scheduling:** ReduceLROnPlateau scheduler automatically reduces learning rate when validation F1 plateaus.
+- **Early Stopping:** Training halts if validation F1 does not improve for a set number of epochs, preventing overfitting.
+- **Gradient Clipping:** All gradients are clipped (max_norm=1.0) to prevent exploding gradients and stabilize training.
+- **Model Checkpointing:** Best model (by validation F1) is always saved for reproducibility.
+- **Comprehensive Logging:** All metrics, losses, and configurations are logged for each experiment.
+
+### 4. Advanced Transfer Learning with Staged Unfreezing
+- **Staged Unfreezing:** Three strategies:
+  - Mode 0: Only classifier layers are trainable (feature extraction)
+  - Mode 1: Classifier layers first, then deepest backbone block (layer4) after 15 epochs
+  - Mode 2: Classifier layers, then layer4, then all layers after 30 epochs
+- **Adaptive Learning Rate:** Learning rate is reduced by 10x at each unfreezing stage to allow stable adaptation.
+- **Pretrained Backbone:** Uses ImageNet-pretrained ResNet50 for strong initial features.
+- **Custom Classifier:** Fully connected layers are configurable for the classification head, with dropout and batch normalization for regularization.

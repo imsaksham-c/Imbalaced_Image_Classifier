@@ -168,19 +168,28 @@ def split_dataset(image_paths, test_size=0.2, test_split=False, test_size_ratio=
 
 
 def get_augmentation_strategy(class_counts, class_name):
-    """Get augmentation strategy based on class size."""
+    """Get augmentation strategy based on class size to achieve more balanced dataset."""
     count = class_counts[class_name]
-    if count >= 80:
-        return 0.25, 1
-    elif count >= 50:
-        return 0.5, 1
-    elif count >= 25:
-        return 0.75, 1
+    
+    # Target: Bring all classes to at least 80-100 images for better balance
+    target_min = 80
+    target_max = 100
+    
+    if count >= target_max:
+        # Large classes: minimal augmentation to avoid over-representation
+        return 0.1, 1
+    elif count >= target_min:
+        # Medium classes: light augmentation
+        return 0.3, 1
+    elif count >= 40:
+        # Medium-small classes: moderate augmentation
+        return 0.8, 1
+    elif count >= 20:
+        # Small classes: heavy augmentation
+        return 1.0, 2
     else:
-        if count < 15:
-            return 1.0, 4
-        else:
-            return 1.0, 2
+        # Very small classes: maximum augmentation
+        return 1.0, 4
 
 
 def save_image(image, path):

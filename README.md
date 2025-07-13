@@ -9,12 +9,12 @@ This project implements several advanced techniques to handle the challenging im
 ### 1. **Adaptive Preprocessing with Weighted Augmentation**
 - **Dynamic Image Size**: Configurable image resolution (default 512x512) for optimal feature extraction
 - **Class-Aware Augmentation**: Aggressive augmentation for smaller classes, minimal for larger classes
-- **Balanced Augmentation Strategy**:
-  - Classes with ≥100 images: 10% augmentation rate, 1 augmentation per image
-  - Classes with ≥80 images: 30% augmentation rate, 1 augmentation per image  
-  - Classes with ≥40 images: 80% augmentation rate, 1 augmentation per image
-  - Classes with ≥20 images: 100% augmentation rate, 2 augmentations per image
-  - Classes with <20 images: 100% augmentation rate, 4 augmentations per image
+- **Diversity-Focused Augmentation** (optimized for weighted loss):
+  - Classes with ≥80 images: 20% augmentation rate, 1 augmentation per image
+  - Classes with ≥50 images: 40% augmentation rate, 1 augmentation per image  
+  - Classes with ≥25 images: 60% augmentation rate, 1 augmentation per image
+  - Classes with ≥15 images: 80% augmentation rate, 1 augmentation per image
+  - Classes with <15 images: 50% augmentation rate, 1 augmentation per image
 - **Comprehensive Augmentation Pipeline**: Horizontal flip, rotation, shift-scale-rotate, brightness/contrast adjustment, gamma correction, hue/saturation shifts, noise injection, and blur
 
 ### 2. **Advanced Transfer Learning with Staged Unfreezing**

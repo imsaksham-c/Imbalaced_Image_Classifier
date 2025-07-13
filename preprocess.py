@@ -108,7 +108,7 @@ class DatasetPreprocessor:
             save_image(self.basic_transform(image=img)['image'], out_path)
             if augment and split_name == 'train':
                 frac, n_aug = get_augmentation_strategy(class_counts, class_name)
-                n_to_aug = int(len(image_list) * frac)
+                n_to_aug = int(class_counts[class_name] * frac)
                 if n_to_aug > 0:
                     for i in range(n_aug):
                         aug_img = self.augmentation_pipeline(image=img)['image']

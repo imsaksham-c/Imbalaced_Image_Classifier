@@ -168,28 +168,46 @@ def split_dataset(image_paths, test_size=0.2, test_split=False, test_size_ratio=
 
 
 def get_augmentation_strategy(class_counts, class_name):
-    """Get augmentation strategy based on class size to achieve more balanced dataset."""
+    """
+    Data-driven augmentation strategy optimized for temple classification.
+    
+    Strategy based on:
+    1. Dataset characteristics (626 total images, 11 classes, 9.2x imbalance)
+    2. Training setup (weighted loss + weighted sampling)
+    3. Temple image characteristics (architectural features, lighting variations)
+    4. Prevention of overfitting on small classes
+    """
     count = class_counts[class_name]
     
-    # Target: Bring all classes to at least 80-100 images for better balance
-    target_min = 80
-    target_max = 100
+    # Calculate class imbalance ratio
+    max_count = max(class_counts.values())
+    imbalance_ratio = max_count / count if count > 0 else float('inf')
     
-    if count >= target_max:
-        # Large classes: minimal augmentation to avoid over-representation
-        return 0.1, 1
-    elif count >= target_min:
-        # Medium classes: light augmentation
-        return 0.3, 1
+    # Base augmentation strategy considering temple image characteristics
+    if count >= 80:
+        # Large classes (Russia, Thailand): Minimal augmentation for variety
+        # These classes have enough diversity naturally
+        return 0.15, 1
+    elif count >= 60:
+        # Medium-large classes (Germany, Spain): Light augmentation
+        # Add some variety without over-representation
+        return 0.25, 1
     elif count >= 40:
-        # Medium-small classes: moderate augmentation
+        # Medium classes (Japan, Hungary+Slovakia+Croatia, etc.): Moderate augmentation
+        # Balance between variety and quantity
+        return 0.4, 1
+    elif count >= 25:
+        # Small-medium classes (Australia, Indonesia-Bali): Moderate-heavy augmentation
+        # Need more variety but avoid overfitting
+        return 0.6, 1
+    elif count >= 15:
+        # Small classes: Heavy augmentation for diversity
+        # But limit to 1 augmentation per image to prevent overfitting
         return 0.8, 1
-    elif count >= 20:
-        # Small classes: heavy augmentation
-        return 1.0, 2
     else:
-        # Very small classes: maximum augmentation
-        return 1.0, 4
+        # Very small classes (Armenia: 11 images): Conservative augmentation
+        # Focus on quality over quantity to prevent overfitting
+        return 0.5, 1
 
 
 def save_image(image, path):
@@ -203,16 +221,49 @@ def save_image(image, path):
 
 
 def get_albumentations_transforms(image_size=512):
-    """Get albumentations augmentation pipeline."""
+    """Get albumentations augmentation pipeline optimized for temple images."""
     return A.Compose([
-        A.HorizontalFlip(p=0.5),
-        A.RandomRotate90(p=0.3),
-        A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=15, p=0.5),
-        A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.6),
-        A.RandomGamma(gamma_limit=(80, 120), p=0.4),
-        A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=15, val_shift_limit=15, p=0.3),
-        A.GaussNoise(var_limit=(10, 30), p=0.2),
-        A.Blur(blur_limit=3, p=0.1),
+        # Geometric transformations (preserve architectural features)
+        A.HorizontalFlip(p=0.4),  # Reduced from 0.5 - temples have orientation
+        A.RandomRotate90(p=0.2),  # Reduced from 0.3 - preserve orientation
+        A.ShiftScaleRotate(
+            shift_limit=0.08,      # Reduced from 0.1 - preserve structure
+            scale_limit=0.08,      # Reduced from 0.1 - maintain proportions
+            rotate_limit=10,       # Reduced from 15 - preserve vertical lines
+            p=0.4
+        ),
+        # Lighting variations (temples have diverse lighting)
+        A.RandomBrightnessContrast(
+            brightness_limit=0.25,  # Increased from 0.2 - temples have varied lighting
+            contrast_limit=0.25,    # Increased from 0.2
+            p=0.7                   # Increased from 0.6
+        ),
+        A.RandomGamma(
+            gamma_limit=(75, 125),  # Adjusted from (80, 120)
+            p=0.5                   # Increased from 0.4
+        ),
+        # Color variations (different architectural styles)
+        A.HueSaturationValue(
+            hue_shift_limit=8,      # Reduced from 10 - preserve architectural colors
+            sat_shift_limit=12,     # Reduced from 15
+            val_shift_limit=12,     # Reduced from 15
+            p=0.4                   # Increased from 0.3
+        ),
+        # Weather/atmospheric effects (realistic for outdoor temples)
+        A.GaussNoise(
+            var_limit=(8, 25),      # Reduced from (10, 30)
+            p=0.3                   # Increased from 0.2
+        ),
+        A.Blur(
+            blur_limit=2,           # Reduced from 3 - preserve details
+            p=0.15                  # Increased from 0.1
+        ),
+        # Temple-specific augmentations
+        A.CLAHE(
+            clip_limit=2.0,         # Enhance architectural details
+            tile_grid_size=(8, 8),
+            p=0.3
+        ),
         A.Resize(image_size, image_size),
         A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])

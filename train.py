@@ -376,6 +376,27 @@ def train_model(args):
     else:
         print("⚠️  No checkpoints found to clean")
     
+    # =========================================================================
+    # SAVE ONLY CLEANED MODEL AS 'final_model.pth'
+    # =========================================================================
+    import shutil
+    from utils.checkpoint_cleanup import cleanup_checkpoint
+    
+    # Path to the best model
+    best_model_path = os.path.join(models_dir, f'best_model_{args.model}_unfreeze{args.unfreeze}.pth')
+    final_model_path = os.path.join(models_dir, 'final_model.pth')
+    # Clean the checkpoint and save as 'final_model.pth'
+    cleanup_checkpoint(best_model_path, final_model_path)
+
+    # Delete all other .pth model files in the models directory except 'final_model.pth'
+    for fname in os.listdir(models_dir):
+        fpath = os.path.join(models_dir, fname)
+        if fpath != final_model_path and fname.endswith('.pth'):
+            os.remove(fpath)
+
+    print(f"\n✅ Only cleaned model saved: {final_model_path}")
+    print(f"All other model files in {models_dir} have been deleted.")
+
     # ============================================================================
     # FINAL SUMMARY
     # ============================================================================

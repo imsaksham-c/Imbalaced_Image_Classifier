@@ -200,3 +200,20 @@ models/
 - **Class Imbalance**: 15-25% improvement in minority class accuracy
 - **Staged Unfreezing**: 10-20% improvement in overall accuracy
 - **Combined**: 25-40% improvement over baseline methods
+
+## All Models Performance Summary
+
+| Experiment        | Model   | Loss        | Unfreeze | Best F1         | Final Acc (%)      |
+|------------------|---------|-------------|----------|-----------------|--------------------|
+| resnet_wce_1     | resnet50| weightedce  | 1        | 0.902578623032131 | 90.58             |
+| resnet_wce_2     | resnet50| weightedce  | 2        | 0.8993225387171052 | 89.86             |
+| resnet_focal_1   | resnet50| focalloss   | 1        | 0.8868031651956108 | 89.13             |
+| resnet_focal_2   | resnet50| focalloss   | 2        | 0.8850962640465959 | 88.41             |
+| resnet_wce_0     | resnet50| weightedce  | 0        | 0.871163284456192 | 86.96             |
+| resnet_focal_0   | resnet50| focalloss   | 0        | 0.8485570797925289 | 84.06             |
+
+> **Note:**
+> - **Best F1**: Highest weighted F1 score achieved during training.
+> - **Final Acc (%)**: Final validation accuracy (percentage).
+> - **Unfreeze**: 0 = feature extraction, 1 = two-stage unfreezing, 2 = three-stage unfreezing.
+> - **All experiments used image size 512x512.**

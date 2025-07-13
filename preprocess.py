@@ -4,14 +4,15 @@ Dataset Preprocessing Script
 
 Preprocesses image datasets for deep learning training by:
 - Scanning dataset structure
-- Splitting into train/validation sets
+- Splitting into train/validation sets (or train/validation/test sets)
 - Applying data augmentation based on class sizes
 - Normalizing and resizing images
 
 Examples:
   python preprocess.py --dataset ./my_dataset
   python preprocess.py --dataset ./dataset --output ./processed_data
-  python preprocess.py --dataset ./dataset --image_size 224
+  python preprocess.py --dataset ./dataset --image_size 512
+  python preprocess.py --dataset ./dataset --test_split --test_size_ratio 0.15
 """
 
 import argparse
@@ -28,16 +29,21 @@ from utils.dataset import (
 
 class DatasetPreprocessor:
     """Dataset preprocessor for image classification."""
-    def __init__(self, dataset_path="./dataset", output_path="./processed_dataset", image_size=512):
+    def __init__(self, dataset_path="./dataset", output_path="./processed_dataset", image_size=512, test_split=False, test_size_ratio=0.1):
         self.dataset_path = Path(dataset_path)
         self.output_path = Path(output_path)
         self.image_size = image_size
+        self.test_split = test_split
+        self.test_size_ratio = test_size_ratio
         self.train_path = self.output_path / "train"
         self.valid_path = self.output_path / "valid"
+        self.test_path = self.output_path / "test" if test_split else None
         if not self.dataset_path.exists():
             raise ValueError(f"Dataset path does not exist: {self.dataset_path}")
         self.train_path.mkdir(parents=True, exist_ok=True)
         self.valid_path.mkdir(parents=True, exist_ok=True)
+        if self.test_split:
+            self.test_path.mkdir(parents=True, exist_ok=True)
         self.augmentation_pipeline = get_albumentations_transforms(image_size)
         self.basic_transform = get_basic_transform(image_size)
         self.dataset_stats = {}
@@ -45,6 +51,9 @@ class DatasetPreprocessor:
         print(f"Input dataset: {self.dataset_path}")
         print(f"Output directory: {self.output_path}")
         print(f"Image size: {image_size}x{image_size}")
+        print(f"Test split: {test_split}")
+        if test_split:
+            print(f"Test size ratio: {test_size_ratio}")
 
     def run_preprocessing(self):
         image_paths, class_counts = scan_dataset(self.dataset_path)
@@ -57,17 +66,40 @@ class DatasetPreprocessor:
         print(f"Class distribution:")
         for class_name, count in sorted(class_counts.items()):
             print(f"  {class_name}: {count} images")
-        train_images, valid_images = split_dataset(image_paths)
-        print(f"\nSplit Summary:")
-        print(f"Training images: {len(train_images)}")
-        print(f"Validation images: {len(valid_images)}")
-        print(f"Total: {len(train_images) + len(valid_images)}")
-        self.process_split(train_images, 'train', class_counts)
-        self.process_split(valid_images, 'valid', class_counts, augment=False)
+        
+        if self.test_split:
+            train_images, valid_images, test_images = split_dataset(
+                image_paths, test_split=True, test_size_ratio=self.test_size_ratio
+            )
+            print(f"\nSplit Summary:")
+            print(f"Training images: {len(train_images)}")
+            print(f"Validation images: {len(valid_images)}")
+            print(f"Test images: {len(test_images)}")
+            print(f"Total: {len(train_images) + len(valid_images) + len(test_images)}")
+            self.process_split(train_images, 'train', class_counts)
+            self.process_split(valid_images, 'valid', class_counts, augment=False)
+            self.process_split(test_images, 'test', class_counts, augment=False)
+        else:
+            train_images, valid_images = split_dataset(image_paths)
+            print(f"\nSplit Summary:")
+            print(f"Training images: {len(train_images)}")
+            print(f"Validation images: {len(valid_images)}")
+            print(f"Total: {len(train_images) + len(valid_images)}")
+            self.process_split(train_images, 'train', class_counts)
+            self.process_split(valid_images, 'valid', class_counts, augment=False)
+        
         self.save_dataset_info()
 
     def process_split(self, image_list, split_name, class_counts, augment=True):
-        split_dir = self.train_path if split_name == 'train' else self.valid_path
+        if split_name == 'train':
+            split_dir = self.train_path
+        elif split_name == 'valid':
+            split_dir = self.valid_path
+        elif split_name == 'test':
+            split_dir = self.test_path
+        else:
+            raise ValueError(f"Invalid split name: {split_name}")
+        
         for img_path, class_name in tqdm(image_list, desc=f'Processing {split_name} set'):
             class_dir = split_dir / class_name
             class_dir.mkdir(parents=True, exist_ok=True)
@@ -90,7 +122,9 @@ class DatasetPreprocessor:
             'num_classes': self.dataset_stats['num_classes'],
             'preprocessing': {
                 'image_size': f"{self.image_size}x{self.image_size}",
-                'augmentation': True
+                'augmentation': True,
+                'test_split': self.test_split,
+                'test_size_ratio': self.test_size_ratio if self.test_split else None
             }
         }
         with open(self.output_path / 'dataset_info.json', 'w') as f:
@@ -129,7 +163,9 @@ def run_preprocessing(args):
         preprocessor = DatasetPreprocessor(
             dataset_path=args.dataset,
             output_path=args.output,
-            image_size=args.image_size
+            image_size=args.image_size,
+            test_split=args.test_split,
+            test_size_ratio=args.test_size_ratio
         )
         
         preprocessor.run_preprocessing()
@@ -162,8 +198,12 @@ def main():
                        help='Path to output directory (default: ./processed_dataset)')
     parser.add_argument('--test_size', type=float, default=0.2,
                        help='Validation split ratio (default: 0.2)')
-    parser.add_argument('--image_size', type=int, default=512,
-                       help='Image size for resizing (default: 512)')
+    parser.add_argument('--test_split', action='store_true',
+                       help='Enable test split (default: False)')
+    parser.add_argument('--test_size_ratio', type=float, default=0.1,
+                       help='Test split ratio (default: 0.1, only used when --test_split is enabled)')
+    parser.add_argument('--image_size', type=int, default=224,
+                       help='Image size for resizing (default: 224)')
     parser.add_argument('--overwrite', action='store_true',
                        help='Overwrite existing output directory')
     

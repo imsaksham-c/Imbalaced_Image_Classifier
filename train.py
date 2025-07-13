@@ -33,7 +33,8 @@ import os
 
 from utils import (
     FocalLoss, plot_training_history, plot_confusion_matrix,
-    get_model, set_trainable_layers, train_epoch, validate_epoch
+    get_model, set_trainable_layers, train_epoch, validate_epoch,
+    cleanup_experiment_models
 )
 from utils.dataset import (
     TempleDataset, get_transforms, load_processed_dataset,
@@ -187,7 +188,6 @@ def train_model(args):
     print("      0 - Only classifier layers trainable")
     print("      1 - Unfreezes deepest backbone block at stage 2 (after 15 epochs)")
     print("      2 - Unfreezes stage 2 after 15 and stage 3 after 30 epochs")
-    print("      3 - All layers trainable from start")
     
     # Initialize tracking variables
     train_losses = []
@@ -218,8 +218,6 @@ def train_model(args):
                 stage = 2
             else:
                 stage = 3
-        else:  # unfreeze == 3
-            stage = 3  # Always stage 3 (all layers)
         
         # Set trainable layers for current stage
         set_trainable_layers(model, stage, args.unfreeze)
@@ -366,6 +364,19 @@ def train_model(args):
         json.dump(config, f, indent=2)
     
     # ============================================================================
+    # CHECKPOINT CLEANUP
+    # ============================================================================
+    print("\n🧹 Cleaning model checkpoints...")
+    cleanup_summary = cleanup_experiment_models(experiment_dir)
+    
+    if cleanup_summary:
+        print(f"✅ Checkpoint cleanup completed!")
+        print(f"   📁 Files processed: {cleanup_summary['files_processed']}")
+        print(f"   📉 Space saved: {cleanup_summary['total_space_saved']:.1f} MB")
+    else:
+        print("⚠️  No checkpoints found to clean")
+    
+    # ============================================================================
     # FINAL SUMMARY
     # ============================================================================
     print(f"\n🎉 Training completed successfully!")
@@ -400,7 +411,7 @@ def main():
                        help='Custom FC layer sizes (e.g., 512 256 for 2 hidden layers)')
     
     # Training arguments
-    parser.add_argument('--batch_size', type=int, default=16, help='Batch size')
+    parser.add_argument('--batch_size', type=int, default=32, help='Batch size')
     parser.add_argument('--epochs', type=int, default=50, help='Number of epochs')
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-4, help='Weight decay')
@@ -411,8 +422,8 @@ def main():
     parser.add_argument('--gamma', type=float, default=2.0, help='Focal loss gamma parameter')
     
     # Transfer learning arguments
-    parser.add_argument('--unfreeze', type=int, choices=[0, 1, 2, 3], 
-                       default=0, help='Unfreezing strategy (0-3)')
+    parser.add_argument('--unfreeze', type=int, choices=[0, 1, 2], 
+                       default=0, help='Unfreezing strategy (0-2)')
     
     # Output arguments
     parser.add_argument('--save_dir', type=str, default='./models', 

@@ -112,30 +112,59 @@ def scan_dataset(dataset_path):
     return image_paths, dict(class_counts)
 
 
-def split_dataset(image_paths, test_size=0.2, random_state=42):
-    """Split dataset into train/validation sets by class."""
+def split_dataset(image_paths, test_size=0.2, test_split=False, test_size_ratio=0.1, random_state=42):
+    """Split dataset into train/validation/test sets by class."""
     from random import Random
     class_images = defaultdict(list)
     for img_path, class_name in image_paths:
         class_images[class_name].append(img_path)
+    
     train_images = []
     valid_images = []
+    test_images = []
+    
     for class_name, images in class_images.items():
         if len(images) == 1:
             train_images.extend([(img, class_name) for img in images])
         else:
             if len(images) < 5:
-                valid_count = 1
-                train_count = len(images) - 1
+                if test_split:
+                    valid_count = 1
+                    test_count = 1
+                    train_count = len(images) - 2
+                else:
+                    valid_count = 1
+                    train_count = len(images) - 1
             else:
-                valid_count = max(1, int(len(images) * test_size))
-                train_count = len(images) - valid_count
+                if test_split:
+                    valid_count = max(1, int(len(images) * test_size))
+                    test_count = max(1, int(len(images) * test_size_ratio))
+                    train_count = len(images) - valid_count - test_count
+                else:
+                    valid_count = max(1, int(len(images) * test_size))
+                    train_count = len(images) - valid_count
+            
             Random(random_state).shuffle(images)
-            train_imgs = images[:train_count]
-            valid_imgs = images[train_count:train_count + valid_count]
-            train_images.extend([(img, class_name) for img in train_imgs])
-            valid_images.extend([(img, class_name) for img in valid_imgs])
-    return train_images, valid_images
+            
+            if test_split:
+                train_imgs = images[:train_count]
+                valid_imgs = images[train_count:train_count + valid_count]
+                test_imgs = images[train_count + valid_count:train_count + valid_count + test_count]
+                
+                train_images.extend([(img, class_name) for img in train_imgs])
+                valid_images.extend([(img, class_name) for img in valid_imgs])
+                test_images.extend([(img, class_name) for img in test_imgs])
+            else:
+                train_imgs = images[:train_count]
+                valid_imgs = images[train_count:train_count + valid_count]
+                
+                train_images.extend([(img, class_name) for img in train_imgs])
+                valid_images.extend([(img, class_name) for img in valid_imgs])
+    
+    if test_split:
+        return train_images, valid_images, test_images
+    else:
+        return train_images, valid_images
 
 
 def get_augmentation_strategy(class_counts, class_name):

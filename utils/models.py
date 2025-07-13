@@ -74,12 +74,11 @@ def set_trainable_layers(model, stage, unfreeze_mode):
     0 - Only classifier layers trainable (feature extraction)
     1 - Unfreezes deepest backbone block at stage 2 (after 15 epochs)
     2 - Unfreezes stage 2 after 15 epochs and stage 3 after 30 epochs
-    3 - All layers trainable from start (full fine-tuning)
     
     Args:
         model (torch.nn.Module): The model to configure
         stage (int): Current training stage (1, 2, or 3)
-        unfreeze_mode (int): Unfreezing strategy (0, 1, 2, or 3)
+        unfreeze_mode (int): Unfreezing strategy (0, 1, or 2)
     """
     
     if unfreeze_mode == 0:
@@ -129,9 +128,4 @@ def set_trainable_layers(model, stage, unfreeze_mode):
         else:  # stage 3
             # All layers trainable
             for param in model.parameters():
-                param.requires_grad = True
-    
-    elif unfreeze_mode == 3:
-        # All layers trainable from start
-        for param in model.parameters():
-            param.requires_grad = True 
+                param.requires_grad = True 

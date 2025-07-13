@@ -89,6 +89,7 @@ class DatasetPreprocessor:
             self.process_split(valid_images, 'valid', class_counts, augment=False)
         
         self.save_dataset_info()
+        self.print_before_after_comparison()
 
     def process_split(self, image_list, split_name, class_counts, augment=True):
         if split_name == 'train':
@@ -100,12 +101,19 @@ class DatasetPreprocessor:
         else:
             raise ValueError(f"Invalid split name: {split_name}")
         
+        # Track processed images for this split
+        processed_counts = {}
+        
         for img_path, class_name in tqdm(image_list, desc=f'Processing {split_name} set'):
             class_dir = split_dir / class_name
             class_dir.mkdir(parents=True, exist_ok=True)
             img = cv2.cvtColor(cv2.imread(str(img_path)), cv2.COLOR_BGR2RGB)
             out_path = class_dir / img_path.name
             save_image(self.basic_transform(image=img)['image'], out_path)
+            
+            # Count original image
+            processed_counts[class_name] = processed_counts.get(class_name, 0) + 1
+            
             if augment and split_name == 'train':
                 frac, n_aug = get_augmentation_strategy(class_counts, class_name)
                 n_to_aug = int(class_counts[class_name] * frac)
@@ -114,6 +122,13 @@ class DatasetPreprocessor:
                         aug_img = self.augmentation_pipeline(image=img)['image']
                         aug_path = class_dir / f"aug_{i}_{img_path.name}"
                         save_image(aug_img, aug_path)
+                        # Count augmented image
+                        processed_counts[class_name] += 1
+        
+        # Store processed counts for this split
+        if not hasattr(self, 'processed_stats'):
+            self.processed_stats = {}
+        self.processed_stats[split_name] = processed_counts
 
     def save_dataset_info(self):
         info = {
@@ -129,6 +144,86 @@ class DatasetPreprocessor:
         }
         with open(self.output_path / 'dataset_info.json', 'w') as f:
             json.dump(info, f, indent=2)
+
+    def print_before_after_comparison(self):
+        """Print detailed before and after preprocessing comparison."""
+        print("\n" + "="*80)
+        print("📊 BEFORE vs AFTER PREPROCESSING COMPARISON")
+        print("="*80)
+        
+        # Get original counts
+        original_counts = self.dataset_stats['class_counts']
+        
+        # Calculate total processed images
+        total_processed = 0
+        train_processed = 0
+        valid_processed = 0
+        test_processed = 0
+        
+        if hasattr(self, 'processed_stats'):
+            if 'train' in self.processed_stats:
+                train_processed = sum(self.processed_stats['train'].values())
+            if 'valid' in self.processed_stats:
+                valid_processed = sum(self.processed_stats['valid'].values())
+            if 'test' in self.processed_stats:
+                test_processed = sum(self.processed_stats['test'].values())
+            total_processed = train_processed + valid_processed + test_processed
+        
+        # Print summary
+        print(f"\n📈 SUMMARY:")
+        print(f"   Original dataset: {self.dataset_stats['total_images']} images")
+        print(f"   Processed dataset: {total_processed} images")
+        print(f"   Increase: {total_processed - self.dataset_stats['total_images']} images ({((total_processed - self.dataset_stats['total_images']) / self.dataset_stats['total_images'] * 100):.1f}%)")
+        
+        if self.test_split:
+            print(f"   Train: {train_processed} images")
+            print(f"   Valid: {valid_processed} images")
+            print(f"   Test: {test_processed} images")
+        else:
+            print(f"   Train: {train_processed} images")
+            print(f"   Valid: {valid_processed} images")
+        
+        # Print detailed class comparison
+        print(f"\n📋 DETAILED CLASS COMPARISON:")
+        print(f"{'Class':<25} {'Original':<10} {'Processed':<10} {'Increase':<10} {'Rate':<8}")
+        print("-" * 65)
+        
+        for class_name in sorted(original_counts.keys()):
+            original = original_counts[class_name]
+            processed = 0
+            
+            # Sum up processed images for this class across all splits
+            if hasattr(self, 'processed_stats'):
+                for split_name, split_counts in self.processed_stats.items():
+                    if class_name in split_counts:
+                        processed += split_counts[class_name]
+            
+            increase = processed - original
+            rate = (increase / original * 100) if original > 0 else 0
+            
+            print(f"{class_name:<25} {original:<10} {processed:<10} {increase:<10} {rate:>6.1f}%")
+        
+        # Calculate class imbalance ratios
+        print(f"\n⚖️  CLASS IMBALANCE ANALYSIS:")
+        original_max = max(original_counts.values())
+        original_min = min(original_counts.values())
+        original_ratio = original_max / original_min if original_min > 0 else float('inf')
+        
+        if hasattr(self, 'processed_stats'):
+            all_processed = {}
+            for split_counts in self.processed_stats.values():
+                for class_name, count in split_counts.items():
+                    all_processed[class_name] = all_processed.get(class_name, 0) + count
+            
+            processed_max = max(all_processed.values())
+            processed_min = min(all_processed.values())
+            processed_ratio = processed_max / processed_min if processed_min > 0 else float('inf')
+            
+            print(f"   Original imbalance ratio: {original_ratio:.1f}x ({original_max}/{original_min})")
+            print(f"   Processed imbalance ratio: {processed_ratio:.1f}x ({processed_max}/{processed_min})")
+            print(f"   Improvement: {((original_ratio - processed_ratio) / original_ratio * 100):.1f}% reduction in imbalance")
+        
+        print("="*80)
 
 
 def run_preprocessing(args):

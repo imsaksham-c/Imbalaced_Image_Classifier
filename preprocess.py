@@ -116,8 +116,9 @@ class DatasetPreprocessor:
             
             if augment and split_name == 'train':
                 frac, n_aug = get_augmentation_strategy(class_counts, class_name)
-                n_to_aug = int(class_counts[class_name] * frac)
-                if n_to_aug > 0:
+                # Only augment a fraction of images, not all images
+                import random
+                if random.random() < frac:
                     for i in range(n_aug):
                         aug_img = self.augmentation_pipeline(image=img)['image']
                         aug_path = class_dir / f"aug_{i}_{img_path.name}"

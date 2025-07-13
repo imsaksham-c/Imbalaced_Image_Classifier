@@ -169,7 +169,7 @@ def split_dataset(image_paths, test_size=0.2, test_split=False, test_size_ratio=
 
 def get_augmentation_strategy(class_counts, class_name):
     """
-    Data-driven augmentation strategy optimized for temple classification.
+    Simple 4-condition augmentation strategy for temple classification.
     
     Strategy based on:
     1. Dataset characteristics (626 total images, 11 classes, 9.2x imbalance)
@@ -179,35 +179,19 @@ def get_augmentation_strategy(class_counts, class_name):
     """
     count = class_counts[class_name]
     
-    # Calculate class imbalance ratio
-    max_count = max(class_counts.values())
-    imbalance_ratio = max_count / count if count > 0 else float('inf')
-    
-    # Base augmentation strategy considering temple image characteristics
+    # Simple 4-condition augmentation strategy
     if count >= 80:
-        # Large classes (Russia, Thailand): Minimal augmentation for variety
-        # These classes have enough diversity naturally
-        return 0.15, 1
-    elif count >= 60:
-        # Medium-large classes (Germany, Spain): Light augmentation
-        # Add some variety without over-representation
-        return 0.25, 1
-    elif count >= 40:
-        # Medium classes (Japan, Hungary+Slovakia+Croatia, etc.): Moderate augmentation
-        # Balance between variety and quantity
+        # Large classes (Russia: 100, Thailand: 101): Minimal augmentation
+        return 0.2, 1
+    elif count >= 50:
+        # Medium-large classes (Germany: 90, Spain: 65): Light augmentation
         return 0.4, 1
     elif count >= 25:
-        # Small-medium classes (Australia, Indonesia-Bali): Moderate-heavy augmentation
-        # Need more variety but avoid overfitting
+        # Medium classes (Japan: 60, Hungary+Slovakia+Croatia: 48, etc.): Moderate augmentation
         return 0.6, 1
-    elif count >= 15:
-        # Small classes: Heavy augmentation for diversity
-        # But limit to 1 augmentation per image to prevent overfitting
-        return 0.8, 1
     else:
-        # Very small classes (Armenia: 11 images): Conservative augmentation
-        # Focus on quality over quantity to prevent overfitting
-        return 0.5, 1
+        # Small classes (Australia: 36, Indonesia-Bali: 44, Armenia: 11): Heavy augmentation
+        return 0.8, 1
 
 
 def save_image(image, path):

@@ -1,0 +1,779 @@
+====================================================================================================
+COMPREHENSIVE MODEL TRAINING SUMMARY REPORT
+====================================================================================================
+Generated on: 2025-07-15 16:58:58
+Total Experiments: 12
+====================================================================================================
+
+EXECUTIVE SUMMARY
+--------------------------------------------------
+Top 5 Performing Experiments:
+        Experiment           Model       Loss  Unfreeze  Best F1  Final Acc  Final F1 Macro  Epochs
+    resnet_focal_2        resnet50  focalloss         2 0.925954  92.753623        0.926030      43
+      resnet_wce_2        resnet50 weightedce         2 0.919718  92.028986        0.923646      41
+      resnet_wce_1        resnet50 weightedce         1 0.912187  91.304348        0.893969      50
+    resnet_focal_1        resnet50  focalloss         1 0.906861  90.579710        0.898491      41
+efficientnet_wce_1 efficientnet_b4 weightedce         1 0.898627  89.855072        0.884299      34
+
+Performance Statistics:
+  Best F1 Score: 0.9260 (resnet_focal_2)
+  Best Accuracy: 92.75% (resnet_focal_2)
+  Average F1 Score: 0.8870
+  Average Accuracy: 88.83%
+
+====================================================================================================
+
+DETAILED ANALYSIS BY MODEL TYPE
+==================================================
+
+EFFICIENTNET_B4 MODELS:
+------------------------------
+Total experiments: 6
+Best F1 Score: 0.8986
+Best Accuracy: 89.86%
+Average F1 Score: 0.8816
+Average Accuracy: 88.04%
+
+Best Configuration for efficientnet_b4:
+  Experiment: efficientnet_wce_1
+  Loss Function: weightedce
+  Unfreeze Mode: 1
+  F1 Score: 0.8986
+  Accuracy: 89.86%
+
+RESNET50 MODELS:
+------------------------------
+Total experiments: 6
+Best F1 Score: 0.9260
+Best Accuracy: 92.75%
+Average F1 Score: 0.8924
+Average Accuracy: 89.61%
+
+Best Configuration for resnet50:
+  Experiment: resnet_focal_2
+  Loss Function: focalloss
+  Unfreeze Mode: 2
+  F1 Score: 0.9260
+  Accuracy: 92.75%
+
+====================================================================================================
+
+DETAILED EXPERIMENT REPORTS
+==================================================
+
+EXPERIMENT 1: efficientnet_focal_0
+--------------------------------------------------
+Configuration:
+  Model: efficientnet_b4
+  Loss Function: focalloss
+  Unfreeze Mode: 0
+  Batch Size: 8
+  Epochs: 50
+  Learning Rate: 0.001
+  Weight Decay: 0.0001
+  Gamma: 2.0
+  Number of Classes: 11
+  Class Names: ['Armenia', 'Australia', 'Germany', 'Hungary+Slovakia+Croatia', 'Indonesia-Bali', 'Japan', 'Malaysia+Indonesia', 'Portugal+Brazil', 'Russia', 'Spain', 'Thailand']
+
+Final Performance Metrics:
+  Best F1 Score (Weighted): 0.8554
+  Final Accuracy: 84.78%
+  Final F1 Macro: 0.8193
+
+Training History Summary:
+  Total Epochs Trained: 21
+  Final Training Loss: 0.0201
+  Final Validation Loss: 0.3130
+  Final Training Accuracy: 98.37%
+  Final Validation Accuracy: 82.61%
+  Best F1 Score: 0.8554
+  Best F1 Epoch: 11
+
+  Loss Reduction: 96.80% (early vs late epochs)
+  Validation Loss Reduction: 34.92%
+
+Model File: models/efficientnet_focal_0/models/final_model.pth
+
+Classification Report:
+                          precision    recall  f1-score   support
+
+                 Armenia       0.40      1.00      0.57         2
+               Australia       1.00      0.86      0.92         7
+                 Germany       0.94      0.81      0.87        21
+Hungary+Slovakia+Croatia       0.55      0.67      0.60         9
+          Indonesia-Bali       0.90      1.00      0.95         9
+                   Japan       0.85      0.92      0.88        12
+      Malaysia+Indonesia       0.92      1.00      0.96        11
+         Portugal+Brazil       0.58      0.70      0.64        10
+                  Russia       1.00      0.83      0.91        24
+                   Spain       0.77      0.77      0.77        13
+                Thailand       1.00      0.90      0.95        20
+
+                accuracy                           0.85       138
+               macro avg       0.81      0.86      0.82       138
+            weighted avg       0.87      0.85      0.86       138
+
+====================================================================================================
+
+EXPERIMENT 2: resnet_focal_2
+--------------------------------------------------
+Configuration:
+  Model: resnet50
+  Loss Function: focalloss
+  Unfreeze Mode: 2
+  Batch Size: 8
+  Epochs: 50
+  Learning Rate: 0.001
+  Weight Decay: 0.0001
+  Gamma: 2.0
+  Number of Classes: 11
+  Class Names: ['Armenia', 'Australia', 'Germany', 'Hungary+Slovakia+Croatia', 'Indonesia-Bali', 'Japan', 'Malaysia+Indonesia', 'Portugal+Brazil', 'Russia', 'Spain', 'Thailand']
+
+Final Performance Metrics:
+  Best F1 Score (Weighted): 0.9260
+  Final Accuracy: 92.75%
+  Final F1 Macro: 0.9260
+
+Training History Summary:
+  Total Epochs Trained: 43
+  Final Training Loss: 0.0034
+  Final Validation Loss: 0.2302
+  Final Training Accuracy: 99.30%
+  Final Validation Accuracy: 89.86%
+  Best F1 Score: 0.9260
+  Best F1 Epoch: 33
+
+  Loss Reduction: 99.18% (early vs late epochs)
+  Validation Loss Reduction: 76.45%
+
+Model File: models/resnet_focal_2/models/final_model.pth
+
+Classification Report:
+                          precision    recall  f1-score   support
+
+                 Armenia       1.00      1.00      1.00         2
+               Australia       0.88      1.00      0.93         7
+                 Germany       0.86      0.86      0.86        21
+Hungary+Slovakia+Croatia       0.86      0.67      0.75         9
+          Indonesia-Bali       1.00      1.00      1.00         9
+                   Japan       1.00      1.00      1.00        12
+      Malaysia+Indonesia       0.92      1.00      0.96        11
+         Portugal+Brazil       0.89      0.80      0.84        10
+                  Russia       0.96      0.96      0.96        24
+                   Spain       0.86      0.92      0.89        13
+                Thailand       1.00      1.00      1.00        20
+
+                accuracy                           0.93       138
+               macro avg       0.93      0.93      0.93       138
+            weighted avg       0.93      0.93      0.93       138
+
+====================================================================================================
+
+EXPERIMENT 3: resnet_focal_1
+--------------------------------------------------
+Configuration:
+  Model: resnet50
+  Loss Function: focalloss
+  Unfreeze Mode: 1
+  Batch Size: 8
+  Epochs: 50
+  Learning Rate: 0.001
+  Weight Decay: 0.0001
+  Gamma: 2.0
+  Number of Classes: 11
+  Class Names: ['Armenia', 'Australia', 'Germany', 'Hungary+Slovakia+Croatia', 'Indonesia-Bali', 'Japan', 'Malaysia+Indonesia', 'Portugal+Brazil', 'Russia', 'Spain', 'Thailand']
+
+Final Performance Metrics:
+  Best F1 Score (Weighted): 0.9069
+  Final Accuracy: 90.58%
+  Final F1 Macro: 0.8985
+
+Training History Summary:
+  Total Epochs Trained: 41
+  Final Training Loss: 0.0085
+  Final Validation Loss: 0.2510
+  Final Training Accuracy: 99.53%
+  Final Validation Accuracy: 88.41%
+  Best F1 Score: 0.9069
+  Best F1 Epoch: 31
+
+  Loss Reduction: 99.41% (early vs late epochs)
+  Validation Loss Reduction: 71.96%
+
+Model File: models/resnet_focal_1/models/final_model.pth
+
+Classification Report:
+                          precision    recall  f1-score   support
+
+                 Armenia       1.00      1.00      1.00         2
+               Australia       1.00      0.71      0.83         7
+                 Germany       1.00      0.86      0.92        21
+Hungary+Slovakia+Croatia       0.78      0.78      0.78         9
+          Indonesia-Bali       1.00      1.00      1.00         9
+                   Japan       0.92      1.00      0.96        12
+      Malaysia+Indonesia       0.92      1.00      0.96        11
+         Portugal+Brazil       0.70      0.70      0.70        10
+                  Russia       0.96      0.96      0.96        24
+                   Spain       0.71      0.92      0.80        13
+                Thailand       1.00      0.95      0.97        20
+
+                accuracy                           0.91       138
+               macro avg       0.91      0.90      0.90       138
+            weighted avg       0.92      0.91      0.91       138
+
+====================================================================================================
+
+EXPERIMENT 4: resnet_wce_2
+--------------------------------------------------
+Configuration:
+  Model: resnet50
+  Loss Function: weightedce
+  Unfreeze Mode: 2
+  Batch Size: 8
+  Epochs: 50
+  Learning Rate: 0.001
+  Weight Decay: 0.0001
+  Gamma: 2.0
+  Number of Classes: 11
+  Class Names: ['Armenia', 'Australia', 'Germany', 'Hungary+Slovakia+Croatia', 'Indonesia-Bali', 'Japan', 'Malaysia+Indonesia', 'Portugal+Brazil', 'Russia', 'Spain', 'Thailand']
+
+Final Performance Metrics:
+  Best F1 Score (Weighted): 0.9197
+  Final Accuracy: 92.03%
+  Final F1 Macro: 0.9236
+
+Training History Summary:
+  Total Epochs Trained: 41
+  Final Training Loss: 0.0091
+  Final Validation Loss: 0.3893
+  Final Training Accuracy: 99.77%
+  Final Validation Accuracy: 90.58%
+  Best F1 Score: 0.9197
+  Best F1 Epoch: 31
+
+  Loss Reduction: 99.69% (early vs late epochs)
+  Validation Loss Reduction: 74.75%
+
+Model File: models/resnet_wce_2/models/final_model.pth
+
+Classification Report:
+                          precision    recall  f1-score   support
+
+                 Armenia       1.00      1.00      1.00         2
+               Australia       1.00      1.00      1.00         7
+                 Germany       0.82      0.86      0.84        21
+Hungary+Slovakia+Croatia       0.86      0.67      0.75         9
+          Indonesia-Bali       1.00      1.00      1.00         9
+                   Japan       0.92      1.00      0.96        12
+      Malaysia+Indonesia       0.92      1.00      0.96        11
+         Portugal+Brazil       0.82      0.90      0.86        10
+                  Russia       1.00      0.96      0.98        24
+                   Spain       0.85      0.85      0.85        13
+                Thailand       1.00      0.95      0.97        20
+
+                accuracy                           0.92       138
+               macro avg       0.93      0.93      0.92       138
+            weighted avg       0.92      0.92      0.92       138
+
+====================================================================================================
+
+EXPERIMENT 5: efficientnet_focal_2
+--------------------------------------------------
+Configuration:
+  Model: efficientnet_b4
+  Loss Function: focalloss
+  Unfreeze Mode: 2
+  Batch Size: 8
+  Epochs: 50
+  Learning Rate: 0.001
+  Weight Decay: 0.0001
+  Gamma: 2.0
+  Number of Classes: 11
+  Class Names: ['Armenia', 'Australia', 'Germany', 'Hungary+Slovakia+Croatia', 'Indonesia-Bali', 'Japan', 'Malaysia+Indonesia', 'Portugal+Brazil', 'Russia', 'Spain', 'Thailand']
+
+Final Performance Metrics:
+  Best F1 Score (Weighted): 0.8928
+  Final Accuracy: 89.13%
+  Final F1 Macro: 0.8921
+
+Training History Summary:
+  Total Epochs Trained: 31
+  Final Training Loss: 0.0136
+  Final Validation Loss: 0.3228
+  Final Training Accuracy: 98.48%
+  Final Validation Accuracy: 89.13%
+  Best F1 Score: 0.8928
+  Best F1 Epoch: 21
+
+  Loss Reduction: 97.74% (early vs late epochs)
+  Validation Loss Reduction: 24.31%
+
+Model File: models/efficientnet_focal_2/models/final_model.pth
+
+Classification Report:
+                          precision    recall  f1-score   support
+
+                 Armenia       1.00      1.00      1.00         2
+               Australia       1.00      0.86      0.92         7
+                 Germany       0.95      0.86      0.90        21
+Hungary+Slovakia+Croatia       0.75      0.67      0.71         9
+          Indonesia-Bali       1.00      1.00      1.00         9
+                   Japan       0.86      1.00      0.92        12
+      Malaysia+Indonesia       0.92      1.00      0.96        11
+         Portugal+Brazil       0.73      0.80      0.76        10
+                  Russia       0.96      0.92      0.94        24
+                   Spain       0.69      0.85      0.76        13
+                Thailand       1.00      0.90      0.95        20
+
+                accuracy                           0.89       138
+               macro avg       0.89      0.89      0.89       138
+            weighted avg       0.90      0.89      0.89       138
+
+====================================================================================================
+
+EXPERIMENT 6: efficientnet_wce_0
+--------------------------------------------------
+Configuration:
+  Model: efficientnet_b4
+  Loss Function: weightedce
+  Unfreeze Mode: 0
+  Batch Size: 8
+  Epochs: 50
+  Learning Rate: 0.001
+  Weight Decay: 0.0001
+  Gamma: 2.0
+  Number of Classes: 11
+  Class Names: ['Armenia', 'Australia', 'Germany', 'Hungary+Slovakia+Croatia', 'Indonesia-Bali', 'Japan', 'Malaysia+Indonesia', 'Portugal+Brazil', 'Russia', 'Spain', 'Thailand']
+
+Final Performance Metrics:
+  Best F1 Score (Weighted): 0.8744
+  Final Accuracy: 87.68%
+  Final F1 Macro: 0.8729
+
+Training History Summary:
+  Total Epochs Trained: 50
+  Final Training Loss: 0.0337
+  Final Validation Loss: 0.8513
+  Final Training Accuracy: 99.42%
+  Final Validation Accuracy: 85.51%
+  Best F1 Score: 0.8744
+  Best F1 Epoch: 43
+
+  Loss Reduction: 96.84% (early vs late epochs)
+  Validation Loss Reduction: 0.36%
+
+Model File: models/efficientnet_wce_0/models/final_model.pth
+
+Classification Report:
+                          precision    recall  f1-score   support
+
+                 Armenia       1.00      1.00      1.00         2
+               Australia       1.00      0.86      0.92         7
+                 Germany       0.94      0.81      0.87        21
+Hungary+Slovakia+Croatia       0.71      0.56      0.63         9
+          Indonesia-Bali       0.82      1.00      0.90         9
+                   Japan       0.79      0.92      0.85        12
+      Malaysia+Indonesia       0.92      1.00      0.96        11
+         Portugal+Brazil       0.80      0.80      0.80        10
+                  Russia       0.96      1.00      0.98        24
+                   Spain       0.80      0.92      0.86        13
+                Thailand       0.89      0.80      0.84        20
+
+                accuracy                           0.88       138
+               macro avg       0.88      0.88      0.87       138
+            weighted avg       0.88      0.88      0.87       138
+
+====================================================================================================
+
+EXPERIMENT 7: efficientnet_focal_1
+--------------------------------------------------
+Configuration:
+  Model: efficientnet_b4
+  Loss Function: focalloss
+  Unfreeze Mode: 1
+  Batch Size: 8
+  Epochs: 50
+  Learning Rate: 0.001
+  Weight Decay: 0.0001
+  Gamma: 2.0
+  Number of Classes: 11
+  Class Names: ['Armenia', 'Australia', 'Germany', 'Hungary+Slovakia+Croatia', 'Indonesia-Bali', 'Japan', 'Malaysia+Indonesia', 'Portugal+Brazil', 'Russia', 'Spain', 'Thailand']
+
+Final Performance Metrics:
+  Best F1 Score (Weighted): 0.8835
+  Final Accuracy: 88.41%
+  Final F1 Macro: 0.8609
+
+Training History Summary:
+  Total Epochs Trained: 24
+  Final Training Loss: 0.0122
+  Final Validation Loss: 0.3129
+  Final Training Accuracy: 99.42%
+  Final Validation Accuracy: 84.78%
+  Best F1 Score: 0.8835
+  Best F1 Epoch: 14
+
+  Loss Reduction: 96.82% (early vs late epochs)
+  Validation Loss Reduction: 36.46%
+
+Model File: models/efficientnet_focal_1/models/final_model.pth
+
+Classification Report:
+                          precision    recall  f1-score   support
+
+                 Armenia       0.67      1.00      0.80         2
+               Australia       0.86      0.86      0.86         7
+                 Germany       0.95      0.86      0.90        21
+Hungary+Slovakia+Croatia       0.71      0.56      0.63         9
+          Indonesia-Bali       1.00      1.00      1.00         9
+                   Japan       0.86      1.00      0.92        12
+      Malaysia+Indonesia       0.92      1.00      0.96        11
+         Portugal+Brazil       0.73      0.80      0.76        10
+                  Russia       0.96      0.96      0.96        24
+                   Spain       0.71      0.77      0.74        13
+                Thailand       1.00      0.90      0.95        20
+
+                accuracy                           0.88       138
+               macro avg       0.85      0.88      0.86       138
+            weighted avg       0.89      0.88      0.88       138
+
+====================================================================================================
+
+EXPERIMENT 8: efficientnet_wce_2
+--------------------------------------------------
+Configuration:
+  Model: efficientnet_b4
+  Loss Function: weightedce
+  Unfreeze Mode: 2
+  Batch Size: 8
+  Epochs: 50
+  Learning Rate: 0.001
+  Weight Decay: 0.0001
+  Gamma: 2.0
+  Number of Classes: 11
+  Class Names: ['Armenia', 'Australia', 'Germany', 'Hungary+Slovakia+Croatia', 'Indonesia-Bali', 'Japan', 'Malaysia+Indonesia', 'Portugal+Brazil', 'Russia', 'Spain', 'Thailand']
+
+Final Performance Metrics:
+  Best F1 Score (Weighted): 0.8846
+  Final Accuracy: 88.41%
+  Final F1 Macro: 0.8944
+
+Training History Summary:
+  Total Epochs Trained: 27
+  Final Training Loss: 0.0500
+  Final Validation Loss: 0.8523
+  Final Training Accuracy: 98.02%
+  Final Validation Accuracy: 88.41%
+  Best F1 Score: 0.8846
+  Best F1 Epoch: 17
+
+  Loss Reduction: 94.51% (early vs late epochs)
+  Validation Loss Reduction: 7.92%
+
+Model File: models/efficientnet_wce_2/models/final_model.pth
+
+Classification Report:
+                          precision    recall  f1-score   support
+
+                 Armenia       1.00      1.00      1.00         2
+               Australia       1.00      0.86      0.92         7
+                 Germany       0.85      0.81      0.83        21
+Hungary+Slovakia+Croatia       0.75      0.67      0.71         9
+          Indonesia-Bali       1.00      1.00      1.00         9
+                   Japan       0.86      1.00      0.92        12
+      Malaysia+Indonesia       0.92      1.00      0.96        11
+         Portugal+Brazil       1.00      0.80      0.89        10
+                  Russia       1.00      0.88      0.93        24
+                   Spain       0.71      0.92      0.80        13
+                Thailand       0.86      0.90      0.88        20
+
+                accuracy                           0.88       138
+               macro avg       0.90      0.89      0.89       138
+            weighted avg       0.89      0.88      0.88       138
+
+====================================================================================================
+
+EXPERIMENT 9: efficientnet_wce_1
+--------------------------------------------------
+Configuration:
+  Model: efficientnet_b4
+  Loss Function: weightedce
+  Unfreeze Mode: 1
+  Batch Size: 8
+  Epochs: 50
+  Learning Rate: 0.001
+  Weight Decay: 0.0001
+  Gamma: 2.0
+  Number of Classes: 11
+  Class Names: ['Armenia', 'Australia', 'Germany', 'Hungary+Slovakia+Croatia', 'Indonesia-Bali', 'Japan', 'Malaysia+Indonesia', 'Portugal+Brazil', 'Russia', 'Spain', 'Thailand']
+
+Final Performance Metrics:
+  Best F1 Score (Weighted): 0.8986
+  Final Accuracy: 89.86%
+  Final F1 Macro: 0.8843
+
+Training History Summary:
+  Total Epochs Trained: 34
+  Final Training Loss: 0.0585
+  Final Validation Loss: 0.7496
+  Final Training Accuracy: 98.02%
+  Final Validation Accuracy: 89.86%
+  Best F1 Score: 0.8986
+  Best F1 Epoch: 24
+
+  Loss Reduction: 94.36% (early vs late epochs)
+  Validation Loss Reduction: 3.48%
+
+Model File: models/efficientnet_wce_1/models/final_model.pth
+
+Classification Report:
+                          precision    recall  f1-score   support
+
+                 Armenia       0.67      1.00      0.80         2
+               Australia       1.00      0.86      0.92         7
+                 Germany       0.90      0.86      0.88        21
+Hungary+Slovakia+Croatia       0.75      0.67      0.71         9
+          Indonesia-Bali       1.00      1.00      1.00         9
+                   Japan       0.86      1.00      0.92        12
+      Malaysia+Indonesia       0.92      1.00      0.96        11
+         Portugal+Brazil       0.80      0.80      0.80        10
+                  Russia       0.96      0.92      0.94        24
+                   Spain       0.80      0.92      0.86        13
+                Thailand       1.00      0.90      0.95        20
+
+                accuracy                           0.90       138
+               macro avg       0.88      0.90      0.88       138
+            weighted avg       0.90      0.90      0.90       138
+
+====================================================================================================
+
+EXPERIMENT 10: resnet_focal_0
+--------------------------------------------------
+Configuration:
+  Model: resnet50
+  Loss Function: focalloss
+  Unfreeze Mode: 0
+  Batch Size: 8
+  Epochs: 50
+  Learning Rate: 0.001
+  Weight Decay: 0.0001
+  Gamma: 2.0
+  Number of Classes: 11
+  Class Names: ['Armenia', 'Australia', 'Germany', 'Hungary+Slovakia+Croatia', 'Indonesia-Bali', 'Japan', 'Malaysia+Indonesia', 'Portugal+Brazil', 'Russia', 'Spain', 'Thailand']
+
+Final Performance Metrics:
+  Best F1 Score (Weighted): 0.8496
+  Final Accuracy: 86.23%
+  Final F1 Macro: 0.7993
+
+Training History Summary:
+  Total Epochs Trained: 49
+  Final Training Loss: 0.7170
+  Final Validation Loss: 0.2974
+  Final Training Accuracy: 61.54%
+  Final Validation Accuracy: 80.43%
+  Best F1 Score: 0.8496
+  Best F1 Epoch: 39
+
+  Loss Reduction: 51.90% (early vs late epochs)
+  Validation Loss Reduction: 64.81%
+
+Model File: models/resnet_focal_0/models/final_model.pth
+
+Classification Report:
+                          precision    recall  f1-score   support
+
+                 Armenia       1.00      0.50      0.67         2
+               Australia       0.83      0.71      0.77         7
+                 Germany       0.90      0.86      0.88        21
+Hungary+Slovakia+Croatia       0.50      0.11      0.18         9
+          Indonesia-Bali       1.00      1.00      1.00         9
+                   Japan       1.00      1.00      1.00        12
+      Malaysia+Indonesia       0.85      1.00      0.92        11
+         Portugal+Brazil       0.62      0.80      0.70        10
+                  Russia       1.00      0.92      0.96        24
+                   Spain       0.60      0.92      0.73        13
+                Thailand       1.00      1.00      1.00        20
+
+                accuracy                           0.86       138
+               macro avg       0.84      0.80      0.80       138
+            weighted avg       0.87      0.86      0.85       138
+
+====================================================================================================
+
+EXPERIMENT 11: resnet_wce_0
+--------------------------------------------------
+Configuration:
+  Model: resnet50
+  Loss Function: weightedce
+  Unfreeze Mode: 0
+  Batch Size: 8
+  Epochs: 50
+  Learning Rate: 0.001
+  Weight Decay: 0.0001
+  Gamma: 2.0
+  Number of Classes: 11
+  Class Names: ['Armenia', 'Australia', 'Germany', 'Hungary+Slovakia+Croatia', 'Indonesia-Bali', 'Japan', 'Malaysia+Indonesia', 'Portugal+Brazil', 'Russia', 'Spain', 'Thailand']
+
+Final Performance Metrics:
+  Best F1 Score (Weighted): 0.8403
+  Final Accuracy: 84.78%
+  Final F1 Macro: 0.7998
+
+Training History Summary:
+  Total Epochs Trained: 30
+  Final Training Loss: 1.0220
+  Final Validation Loss: 0.5284
+  Final Training Accuracy: 64.92%
+  Final Validation Accuracy: 82.61%
+  Best F1 Score: 0.8403
+  Best F1 Epoch: 20
+
+  Loss Reduction: 45.95% (early vs late epochs)
+  Validation Loss Reduction: 61.45%
+
+Model File: models/resnet_wce_0/models/final_model.pth
+
+Classification Report:
+                          precision    recall  f1-score   support
+
+                 Armenia       1.00      0.50      0.67         2
+               Australia       0.83      0.71      0.77         7
+                 Germany       0.89      0.76      0.82        21
+Hungary+Slovakia+Croatia       0.50      0.22      0.31         9
+          Indonesia-Bali       1.00      1.00      1.00         9
+                   Japan       1.00      1.00      1.00        12
+      Malaysia+Indonesia       0.85      1.00      0.92        11
+         Portugal+Brazil       0.62      0.80      0.70        10
+                  Russia       0.96      0.92      0.94        24
+                   Spain       0.61      0.85      0.71        13
+                Thailand       0.95      1.00      0.98        20
+
+                accuracy                           0.85       138
+               macro avg       0.84      0.80      0.80       138
+            weighted avg       0.85      0.85      0.84       138
+
+====================================================================================================
+
+EXPERIMENT 12: resnet_wce_1
+--------------------------------------------------
+Configuration:
+  Model: resnet50
+  Loss Function: weightedce
+  Unfreeze Mode: 1
+  Batch Size: 8
+  Epochs: 50
+  Learning Rate: 0.001
+  Weight Decay: 0.0001
+  Gamma: 2.0
+  Number of Classes: 11
+  Class Names: ['Armenia', 'Australia', 'Germany', 'Hungary+Slovakia+Croatia', 'Indonesia-Bali', 'Japan', 'Malaysia+Indonesia', 'Portugal+Brazil', 'Russia', 'Spain', 'Thailand']
+
+Final Performance Metrics:
+  Best F1 Score (Weighted): 0.9122
+  Final Accuracy: 91.30%
+  Final F1 Macro: 0.8940
+
+Training History Summary:
+  Total Epochs Trained: 50
+  Final Training Loss: 0.0134
+  Final Validation Loss: 0.4493
+  Final Training Accuracy: 99.65%
+  Final Validation Accuracy: 90.58%
+  Best F1 Score: 0.9122
+  Best F1 Epoch: 42
+
+  Loss Reduction: 99.10% (early vs late epochs)
+  Validation Loss Reduction: 69.35%
+
+Model File: models/resnet_wce_1/models/final_model.pth
+
+Classification Report:
+                          precision    recall  f1-score   support
+
+                 Armenia       0.67      1.00      0.80         2
+               Australia       0.86      0.86      0.86         7
+                 Germany       0.90      0.86      0.88        21
+Hungary+Slovakia+Croatia       0.86      0.67      0.75         9
+          Indonesia-Bali       1.00      1.00      1.00         9
+                   Japan       0.92      1.00      0.96        12
+      Malaysia+Indonesia       0.92      1.00      0.96        11
+         Portugal+Brazil       0.89      0.80      0.84        10
+                  Russia       0.96      0.96      0.96        24
+                   Spain       0.80      0.92      0.86        13
+                Thailand       1.00      0.95      0.97        20
+
+                accuracy                           0.91       138
+               macro avg       0.89      0.91      0.89       138
+            weighted avg       0.92      0.91      0.91       138
+
+====================================================================================================
+
+COMPARATIVE ANALYSIS
+==================================================
+
+Loss Function Performance:
+  focalloss:
+    Average F1: 0.8857
+    Average Accuracy: 88.65%
+    Best F1: 0.9260
+    Best Accuracy: 92.75%
+
+  weightedce:
+    Average F1: 0.8883
+    Average Accuracy: 89.01%
+    Best F1: 0.9197
+    Best Accuracy: 92.03%
+
+Unfreeze Mode Performance:
+  Unfreeze Mode 0:
+    Average F1: 0.8549
+    Average Accuracy: 85.87%
+    Best F1: 0.8744
+    Best Accuracy: 87.68%
+
+  Unfreeze Mode 1:
+    Average F1: 0.9003
+    Average Accuracy: 90.04%
+    Best F1: 0.9122
+    Best Accuracy: 91.30%
+
+  Unfreeze Mode 2:
+    Average F1: 0.9058
+    Average Accuracy: 90.58%
+    Best F1: 0.9260
+    Best Accuracy: 92.75%
+
+RECOMMENDATIONS
+==================================================
+
+Best Overall Model: resnet_focal_2
+  Model: resnet50
+  Loss Function: focalloss
+  Unfreeze Mode: 2
+  F1 Score: 0.9260
+  Accuracy: 92.75%
+
+Best efficientnet_b4 Configuration:
+  Experiment: efficientnet_wce_1
+  Loss: weightedce
+  Unfreeze: 1
+  F1: 0.8986
+
+Best resnet50 Configuration:
+  Experiment: resnet_focal_2
+  Loss: focalloss
+  Unfreeze: 2
+  F1: 0.9260
+
+Training Insights:
+  Average epochs trained: 36.8
+  Potential overfitting detected in 0 experiments
+
+CONCLUSION
+==================================================
+This comprehensive analysis covers 12 experiments with 2 different model architectures. The best performing model achieved an F1 score of 0.9260 and accuracy of 92.75%. The results provide insights into the effectiveness of different model architectures, loss functions, and training strategies for the temple image classification task.
+
+====================================================================================================
+END OF REPORT
+====================================================================================================

@@ -296,7 +296,7 @@ def main():
                        help='Enable test split (default: False)')
     parser.add_argument('--test_size_ratio', type=float, default=0.1,
                        help='Test split ratio (default: 0.1, only used when --test_split is enabled)')
-    parser.add_argument('--image_size', type=int, default=224,
+    parser.add_argument('--image_size', type=int, default=512,
                        help='Image size for resizing (default: 224)')
     parser.add_argument('--overwrite', action='store_true',
                        help='Overwrite existing output directory')

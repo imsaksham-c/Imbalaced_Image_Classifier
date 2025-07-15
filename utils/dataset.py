@@ -169,29 +169,22 @@ def split_dataset(image_paths, test_size=0.2, test_split=False, test_size_ratio=
 
 def get_augmentation_strategy(class_counts, class_name):
     """
-    Simple 4-condition augmentation strategy for temple classification.
-    
-    Strategy based on:
-    1. Dataset characteristics (626 total images, 11 classes, 9.2x imbalance)
-    2. Training setup (weighted loss + weighted sampling)
-    3. Temple image characteristics (architectural features, lighting variations)
-    4. Prevention of overfitting on small classes
+    Enhanced augmentation strategy for temple classification.
+    More augmentations for weak (small) classes.
     """
     count = class_counts[class_name]
-    
-    # Simple 4-condition augmentation strategy
     if count >= 80:
-        # Large classes (Russia: 100, Thailand: 101): Minimal augmentation
+        # Large classes: Minimal augmentation
         return 0.2, 1
     elif count >= 50:
-        # Medium-large classes (Germany: 90, Spain: 65): Light augmentation
+        # Medium-large classes: Light augmentation
         return 0.4, 1
     elif count >= 25:
-        # Medium classes (Japan: 60, Hungary+Slovakia+Croatia: 48, etc.): Moderate augmentation
-        return 0.6, 1
+        # Medium classes: Moderate augmentation
+        return 0.6, 2
     else:
-        # Small classes (Australia: 36, Indonesia-Bali: 44, Armenia: 11): Heavy augmentation
-        return 0.8, 1
+        # Small classes: Heavy and diverse augmentation
+        return 1.0, 4  # Always augment, 4 times per image
 
 
 def save_image(image, path):
@@ -205,49 +198,32 @@ def save_image(image, path):
 
 
 def get_albumentations_transforms(image_size=512):
-    """Get albumentations augmentation pipeline optimized for temple images."""
+    """Get a diverse albumentations augmentation pipeline for temple images, compatible with Albumentations 2.0.8."""
     return A.Compose([
-        # Geometric transformations (preserve architectural features)
-        A.HorizontalFlip(p=0.4),  # Reduced from 0.5 - temples have orientation
-        A.RandomRotate90(p=0.2),  # Reduced from 0.3 - preserve orientation
-        A.ShiftScaleRotate(
-            shift_limit=0.08,      # Reduced from 0.1 - preserve structure
-            scale_limit=0.08,      # Reduced from 0.1 - maintain proportions
-            rotate_limit=10,       # Reduced from 15 - preserve vertical lines
-            p=0.4
-        ),
-        # Lighting variations (temples have diverse lighting)
-        A.RandomBrightnessContrast(
-            brightness_limit=0.25,  # Increased from 0.2 - temples have varied lighting
-            contrast_limit=0.25,    # Increased from 0.2
-            p=0.7                   # Increased from 0.6
-        ),
-        A.RandomGamma(
-            gamma_limit=(75, 125),  # Adjusted from (80, 120)
-            p=0.5                   # Increased from 0.4
-        ),
-        # Color variations (different architectural styles)
-        A.HueSaturationValue(
-            hue_shift_limit=8,      # Reduced from 10 - preserve architectural colors
-            sat_shift_limit=12,     # Reduced from 15
-            val_shift_limit=12,     # Reduced from 15
-            p=0.4                   # Increased from 0.3
-        ),
-        # Weather/atmospheric effects (realistic for outdoor temples)
-        A.GaussNoise(
-            var_limit=(8.0, 25.0),  # Fixed: use float values
-            p=0.3                   # Increased from 0.2
-        ),
-        A.Blur(
-            blur_limit=(3, 3),      # Fixed: use valid kernel size range
-            p=0.15                  # Increased from 0.1
-        ),
-        # Temple-specific augmentations
-        A.CLAHE(
-            clip_limit=2.0,         # Enhance architectural details
-            tile_grid_size=(8, 8),
-            p=0.3
-        ),
+        # Geometric transformations
+        A.HorizontalFlip(p=0.5),
+        A.VerticalFlip(p=0.2),
+        A.RandomRotate90(p=0.3),
+        A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=20, p=0.5),
+        A.CenterCrop(height=image_size, width=image_size, p=0.3),
+        A.GridDistortion(num_steps=5, distort_limit=0.2, p=0.2),
+        A.ElasticTransform(alpha=1, sigma=50, p=0.15),  # removed alpha_affine
+        # Lighting and color
+        A.RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3, p=0.7),
+        A.RandomGamma(gamma_limit=(70, 130), p=0.5),
+        A.HueSaturationValue(hue_shift_limit=12, sat_shift_limit=18, val_shift_limit=18, p=0.5),
+        # A.Solarize and A.Posterize are not available in 2.0.8, so remove them
+        # Weather/atmospheric effects
+        A.GaussNoise(var_limit=(8.0, 40.0), p=0.3),
+        A.Blur(blur_limit=(3, 5), p=0.2),
+        A.CLAHE(clip_limit=2.0, tile_grid_size=(8, 8), p=0.3),
+        A.RandomFog(fog_coef_range=(0.1, 0.3), alpha_coef=0.08, p=0.1),  # updated argument
+        A.RandomRain(blur_value=2, brightness_coefficient=0.9, drop_length=10, drop_width=1, p=0.1),
+        A.RandomShadow(shadow_roi=(0, 0.5, 1, 1), p=0.1),  # removed num_shadows_lower/upper
+        A.RandomSunFlare(flare_roi=(0, 0, 1, 0.5), p=0.1),  # removed angle_lower
+        # Dropout
+        A.CoarseDropout(max_holes=8, max_height=32, max_width=32, min_holes=2, min_height=8, min_width=8, fill_value=0, p=0.2),
+        # Resize and normalize
         A.Resize(image_size, image_size),
         A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])

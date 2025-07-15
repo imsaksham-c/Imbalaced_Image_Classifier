@@ -8,7 +8,7 @@ models for temple image classification.
 
 import torch
 import torch.nn as nn
-from torchvision.models import resnet50
+from torchvision.models import resnet50, efficientnet_b4
 
 
 def get_model(model_name, num_classes, pretrained=True, fc_layers=None, device=None):
@@ -57,9 +57,28 @@ def get_model(model_name, num_classes, pretrained=True, fc_layers=None, device=N
                 nn.Linear(model.fc.in_features, num_classes)
             )
             
+    elif model_name == 'efficientnet_b4':
+        model = efficientnet_b4(pretrained=pretrained)
+        if fc_layers:
+            layers = []
+            in_features = model.classifier[1].in_features
+            for i, layer_size in enumerate(fc_layers):
+                layers.extend([
+                    nn.Linear(in_features if i == 0 else fc_layers[i-1], layer_size),
+                    nn.ReLU(inplace=True),
+                    nn.BatchNorm1d(layer_size),
+                    nn.Dropout(0.5)
+                ])
+                in_features = layer_size
+            layers.append(nn.Linear(fc_layers[-1], num_classes))
+            model.classifier = nn.Sequential(
+                nn.Dropout(p=0.2, inplace=True),
+                *layers
+            )
+        else:
+            model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
     else:
-        raise ValueError(f"❌ Model {model_name} is not supported. "
-                        f"Supported models: resnet50")
+        raise ValueError(f"❌ Model {model_name} is not supported. Supported models: resnet50, efficientnet_b4")
     
     return model.to(device)
 

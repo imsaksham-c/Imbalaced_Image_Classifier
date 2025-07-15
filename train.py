@@ -32,7 +32,7 @@ import datetime
 import os
 
 from utils import (
-    FocalLoss, plot_training_history, plot_confusion_matrix,
+    FocalLoss, plot_training_history, plot_confusion_matrix, plot_per_class_metrics, plot_precision_recall_roc,
     get_model, set_trainable_layers, train_epoch, validate_epoch,
     cleanup_experiment_models
 )
@@ -288,6 +288,21 @@ def train_model(args):
     model.load_state_dict(checkpoint['model_state_dict'])
     val_loss, val_acc, f1_weighted, f1_macro, predictions, true_labels = validate_epoch(
         model, val_loader, criterion)
+
+    # Get predicted probabilities for ROC/PR curves
+    model.eval()
+    all_probs = []
+    with torch.no_grad():
+        for images, _ in val_loader:
+            images = images.to(device)
+            outputs = model(images)
+            probs = torch.softmax(outputs, dim=1)
+            all_probs.append(probs.cpu().numpy())
+    y_score = np.concatenate(all_probs, axis=0)
+
+    # Plot per-class metrics, precision-recall, and ROC curves
+    plot_per_class_metrics(true_labels, predictions, class_names, plots_dir)
+    plot_precision_recall_roc(true_labels, y_score, class_names, plots_dir)
     
     print(f"🤖 Model: {args.model}")
     print(f"🔄 Unfreeze Mode: {args.unfreeze}")
@@ -426,8 +441,8 @@ def main():
     
     # Model arguments
     parser.add_argument('--model', type=str, 
-                       choices=['resnet50'], 
-                       default='resnet50', help='Model architecture (only ResNet50 supported)')
+                       choices=['resnet50', 'efficientnet_b4'], 
+                       default='resnet50', help='Model architecture (resnet50 or efficientnet_b4)')
     parser.add_argument('--fc_layers', type=int, nargs='+', default=None,
                        help='Custom FC layer sizes (e.g., 512 256 for 2 hidden layers)')
     

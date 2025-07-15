@@ -9,7 +9,9 @@ and other visualizations for the temple image classification project.
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, precision_recall_curve, roc_curve, auc, classification_report
+from sklearn.preprocessing import label_binarize
+import numpy as np
 
 
 def plot_training_history(train_losses, val_losses, train_accs, val_accs, f1_scores, save_dir):
@@ -147,3 +149,53 @@ def plot_confusion_matrix(y_true, y_pred, class_names, save_dir):
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'confusion_matrix.png'), dpi=300, bbox_inches='tight')
     plt.show() 
+
+
+def plot_per_class_metrics(y_true, y_pred, class_names, save_dir):
+    """Plot per-class precision, recall, and F1 as bar plots."""
+    report = classification_report(y_true, y_pred, target_names=class_names, output_dict=True)
+    metrics = ['precision', 'recall', 'f1-score']
+    for metric in metrics:
+        values = [report[cls][metric] for cls in class_names]
+        plt.figure(figsize=(10, 6))
+        plt.bar(class_names, values)
+        plt.title(f'Per-Class {metric.capitalize()}')
+        plt.ylabel(metric.capitalize())
+        plt.xlabel('Class')
+        plt.ylim(0, 1)
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.savefig(os.path.join(save_dir, f'per_class_{metric}.png'), dpi=300)
+        plt.close()
+
+
+def plot_precision_recall_roc(y_true, y_score, class_names, save_dir):
+    """Plot precision-recall and ROC curves for each class."""
+    y_true_bin = label_binarize(y_true, classes=range(len(class_names)))
+    n_classes = y_true_bin.shape[1]
+    # Precision-Recall Curve
+    plt.figure(figsize=(10, 8))
+    for i in range(n_classes):
+        precision, recall, _ = precision_recall_curve(y_true_bin[:, i], y_score[:, i])
+        plt.plot(recall, precision, lw=2, label=f'{class_names[i]}')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title('Precision-Recall Curve (per class)')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, 'precision_recall_curve.png'), dpi=300)
+    plt.close()
+    # ROC Curve
+    plt.figure(figsize=(10, 8))
+    for i in range(n_classes):
+        fpr, tpr, _ = roc_curve(y_true_bin[:, i], y_score[:, i])
+        roc_auc = auc(fpr, tpr)
+        plt.plot(fpr, tpr, lw=2, label=f'{class_names[i]} (AUC={roc_auc:.2f})')
+    plt.plot([0, 1], [0, 1], 'k--', lw=2)
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curve (per class)')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, 'roc_curve.png'), dpi=300)
+    plt.close() 

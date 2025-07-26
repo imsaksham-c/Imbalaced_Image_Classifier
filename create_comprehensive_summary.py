@@ -9,13 +9,13 @@ warnings.filterwarnings('ignore')
 
 def load_experiment_data(models_dir="./models"):
     """
-    Load all experiment data from the models directory
+    Load all experiment data from the train directory
     """
     experiments_data = {}
     
     models_path = Path(models_dir)
     if not models_path.exists():
-        print(f"Models directory {models_dir} not found!")
+        print(f"Train directory {models_dir} not found!")
         return experiments_data
     
     experiment_dirs = [d for d in models_path.iterdir() if d.is_dir() and not d.name.startswith('.')]
@@ -34,6 +34,11 @@ def load_experiment_data(models_dir="./models"):
             'final_metrics': None,
             'model_path': None
         }
+        
+        # Skip if this is not a valid experiment directory
+        if not exp_dir.is_dir():
+            print(f"  ⚠️  Skipping {exp_name} - not a directory")
+            continue
         
         # Load training history
         logs_dir = exp_dir / "logs"
@@ -72,8 +77,15 @@ def load_experiment_data(models_dir="./models"):
             if model_files:
                 exp_data['model_path'] = str(model_files[0])
         
-        experiments_data[exp_name] = exp_data
-        print(f"  ✅ Loaded data for {exp_name}")
+        # Only add to experiments_data if we have at least some valid data
+        if (exp_data['training_history'] is not None or 
+            exp_data['config'] is not None or 
+            exp_data['classification_report'] is not None or 
+            exp_data['model_path'] is not None):
+            experiments_data[exp_name] = exp_data
+            print(f"  ✅ Loaded data for {exp_name}")
+        else:
+            print(f"  ⚠️  Skipping {exp_name} - no valid data found")
     
     return experiments_data
 
@@ -97,8 +109,18 @@ def create_comprehensive_summary(experiments_data, output_file="comprehensive_mo
         # Create summary table
         summary_data = []
         for exp_name, data in experiments_data.items():
+            # Skip if data is None or incomplete
+            if data is None:
+                print(f"Warning: Skipping experiment {exp_name} - data is None")
+                continue
+                
             config = data.get('config', {})
-            final_metrics = data.get('training_history', {}).get('final_metrics', {})
+            training_history = data.get('training_history', {})
+            final_metrics = training_history.get('final_metrics', {}) if training_history else {}
+            
+            # Ensure config is a dictionary, not None
+            if config is None:
+                config = {}
             
             summary_data.append({
                 'Experiment': exp_name,
@@ -108,7 +130,7 @@ def create_comprehensive_summary(experiments_data, output_file="comprehensive_mo
                 'Best F1': final_metrics.get('best_f1_weighted', 0),
                 'Final Acc': final_metrics.get('final_accuracy', 0),
                 'Final F1 Macro': final_metrics.get('final_f1_macro', 0),
-                'Epochs': len(data.get('training_history', {}).get('train_losses', []))
+                'Epochs': len(training_history.get('train_losses', [])) if training_history else 0
             })
         
         df = pd.DataFrame(summary_data)
@@ -159,8 +181,16 @@ def create_comprehensive_summary(experiments_data, output_file="comprehensive_mo
             f.write(f"EXPERIMENT {i}: {exp_name}\n")
             f.write("-" * 50 + "\n")
             
+            # Skip if data is None or incomplete
+            if data is None:
+                f.write("⚠️  Warning: Experiment data is incomplete or missing\n\n")
+                f.write("=" * 100 + "\n\n")
+                continue
+            
             # Configuration
             config = data.get('config', {})
+            if config is None:
+                config = {}
             if config:
                 f.write("Configuration:\n")
                 f.write(f"  Model: {config.get('model', 'Unknown')}\n")
@@ -173,17 +203,21 @@ def create_comprehensive_summary(experiments_data, output_file="comprehensive_mo
                 f.write(f"  Gamma: {config.get('gamma', 'Unknown')}\n")
                 f.write(f"  Number of Classes: {config.get('num_classes', 'Unknown')}\n")
                 f.write(f"  Class Names: {config.get('class_names', 'Unknown')}\n\n")
+            else:
+                f.write("⚠️  Warning: Configuration data not found\n\n")
             
             # Final Metrics
-            final_metrics = data.get('training_history', {}).get('final_metrics', {})
+            training_history = data.get('training_history', {})
+            final_metrics = training_history.get('final_metrics', {}) if training_history else {}
             if final_metrics:
                 f.write("Final Performance Metrics:\n")
                 f.write(f"  Best F1 Score (Weighted): {final_metrics.get('best_f1_weighted', 'N/A'):.4f}\n")
                 f.write(f"  Final Accuracy: {final_metrics.get('final_accuracy', 'N/A'):.2f}%\n")
                 f.write(f"  Final F1 Macro: {final_metrics.get('final_f1_macro', 'N/A'):.4f}\n\n")
+            else:
+                f.write("⚠️  Warning: Final metrics not found\n\n")
             
             # Training History Summary
-            training_history = data.get('training_history', {})
             if training_history:
                 train_losses = training_history.get('train_losses', [])
                 val_losses = training_history.get('val_losses', [])
@@ -255,53 +289,66 @@ def create_comprehensive_summary(experiments_data, output_file="comprehensive_mo
         f.write("RECOMMENDATIONS\n")
         f.write("=" * 50 + "\n\n")
         
-        best_overall = df.loc[df['Best F1'].idxmax()]
-        f.write(f"Best Overall Model: {best_overall['Experiment']}\n")
-        f.write(f"  Model: {best_overall['Model']}\n")
-        f.write(f"  Loss Function: {best_overall['Loss']}\n")
-        f.write(f"  Unfreeze Mode: {best_overall['Unfreeze']}\n")
-        f.write(f"  F1 Score: {best_overall['Best F1']:.4f}\n")
-        f.write(f"  Accuracy: {best_overall['Final Acc']:.2f}%\n\n")
-        
-        # Model-specific recommendations
-        for model_name, group in model_groups:
-            best_model = group.loc[group['Best F1'].idxmax()]
-            f.write(f"Best {model_name} Configuration:\n")
-            f.write(f"  Experiment: {best_model['Experiment']}\n")
-            f.write(f"  Loss: {best_model['Loss']}\n")
-            f.write(f"  Unfreeze: {best_model['Unfreeze']}\n")
-            f.write(f"  F1: {best_model['Best F1']:.4f}\n\n")
+        if not df.empty:
+            best_overall = df.loc[df['Best F1'].idxmax()]
+            f.write(f"Best Overall Model: {best_overall['Experiment']}\n")
+            f.write(f"  Model: {best_overall['Model']}\n")
+            f.write(f"  Loss Function: {best_overall['Loss']}\n")
+            f.write(f"  Unfreeze Mode: {best_overall['Unfreeze']}\n")
+            f.write(f"  F1 Score: {best_overall['Best F1']:.4f}\n")
+            f.write(f"  Accuracy: {best_overall['Final Acc']:.2f}%\n\n")
+            
+            # Model-specific recommendations
+            for model_name, group in model_groups:
+                best_model = group.loc[group['Best F1'].idxmax()]
+                f.write(f"Best {model_name} Configuration:\n")
+                f.write(f"  Experiment: {best_model['Experiment']}\n")
+                f.write(f"  Loss: {best_model['Loss']}\n")
+                f.write(f"  Unfreeze: {best_model['Unfreeze']}\n")
+                f.write(f"  F1: {best_model['Best F1']:.4f}\n\n")
+        else:
+            f.write("⚠️  No valid experiment data available for recommendations\n\n")
         
         # Training insights
         f.write("Training Insights:\n")
-        avg_epochs = df['Epochs'].mean()
-        f.write(f"  Average epochs trained: {avg_epochs:.1f}\n")
-        
-        # Check for overfitting patterns
-        overfitting_count = 0
-        for exp_name, data in experiments_data.items():
-            training_history = data.get('training_history', {})
-            if training_history:
-                train_losses = training_history.get('train_losses', [])
-                val_losses = training_history.get('val_losses', [])
-                if len(train_losses) > 10 and len(val_losses) > 10:
-                    early_val_loss = np.mean(val_losses[:5])
-                    late_val_loss = np.mean(val_losses[-5:])
-                    if late_val_loss > early_val_loss * 1.1:  # 10% increase
-                        overfitting_count += 1
-        
-        f.write(f"  Potential overfitting detected in {overfitting_count} experiments\n")
+        if not df.empty:
+            avg_epochs = df['Epochs'].mean()
+            f.write(f"  Average epochs trained: {avg_epochs:.1f}\n")
+            
+            # Check for overfitting patterns
+            overfitting_count = 0
+            for exp_name, data in experiments_data.items():
+                if data is None:
+                    continue
+                training_history = data.get('training_history', {})
+                if training_history:
+                    train_losses = training_history.get('train_losses', [])
+                    val_losses = training_history.get('val_losses', [])
+                    if len(train_losses) > 10 and len(val_losses) > 10:
+                        early_val_loss = np.mean(val_losses[:5])
+                        late_val_loss = np.mean(val_losses[-5:])
+                        if late_val_loss > early_val_loss * 1.1:  # 10% increase
+                            overfitting_count += 1
+            
+            f.write(f"  Potential overfitting detected in {overfitting_count} experiments\n")
+        else:
+            f.write("  ⚠️  No training data available for insights\n")
         
         # Conclusion
         f.write("\nCONCLUSION\n")
         f.write("=" * 50 + "\n")
-        f.write(f"This comprehensive analysis covers {len(experiments_data)} experiments ")
-        f.write(f"with {len(df['Model'].unique())} different model architectures. ")
-        f.write(f"The best performing model achieved an F1 score of {df['Best F1'].max():.4f} ")
-        f.write(f"and accuracy of {df['Final Acc'].max():.2f}%. ")
-        f.write("The results provide insights into the effectiveness of different ")
-        f.write("model architectures, loss functions, and training strategies for ")
-        f.write("the temple image classification task.\n")
+        if not df.empty:
+            f.write(f"This comprehensive analysis covers {len(experiments_data)} experiments ")
+            f.write(f"with {len(df['Model'].unique())} different model architectures. ")
+            f.write(f"The best performing model achieved an F1 score of {df['Best F1'].max():.4f} ")
+            f.write(f"and accuracy of {df['Final Acc'].max():.2f}%. ")
+            f.write("The results provide insights into the effectiveness of different ")
+            f.write("model architectures, loss functions, and training strategies for ")
+            f.write("the temple image classification task.\n")
+        else:
+            f.write("This analysis attempted to process experiment data, but no valid ")
+            f.write("training results were found. Please ensure that training experiments ")
+            f.write("have completed successfully and generated the required log files.\n")
         
         f.write("\n" + "=" * 100 + "\n")
         f.write("END OF REPORT\n")
@@ -311,7 +358,7 @@ def main():
     """
     Main function to create comprehensive summary
     """
-    print("🔍 Loading all experiment data...")
+    print("🔍 Loading all experiment data from train directory...")
     experiments_data = load_experiment_data()
     
     if not experiments_data:
@@ -330,9 +377,20 @@ def main():
     # Also create a CSV summary
     summary_data = []
     for exp_name, data in experiments_data.items():
+        if data is None:
+            continue
+            
         config = data.get('config', {})
-        final_metrics = data.get('training_history', {}).get('final_metrics', {})
         training_history = data.get('training_history', {})
+        final_metrics = training_history.get('final_metrics', {}) if training_history else {}
+        
+        # Ensure config is a dictionary, not None
+        if config is None:
+            config = {}
+        
+        # Ensure training_history is a dictionary, not None
+        if training_history is None:
+            training_history = {}
         
         summary_data.append({
             'Experiment': exp_name,

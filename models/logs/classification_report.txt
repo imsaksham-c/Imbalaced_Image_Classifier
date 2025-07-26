@@ -1,0 +1,17 @@
+                          precision    recall  f1-score   support
+
+                 Armenia       1.00      1.00      1.00         2
+               Australia       0.88      1.00      0.93         7
+                 Germany       0.86      0.86      0.86        21
+Hungary+Slovakia+Croatia       0.86      0.67      0.75         9
+          Indonesia-Bali       1.00      1.00      1.00         9
+                   Japan       1.00      1.00      1.00        12
+      Malaysia+Indonesia       0.92      1.00      0.96        11
+         Portugal+Brazil       0.89      0.80      0.84        10
+                  Russia       0.96      0.96      0.96        24
+                   Spain       0.86      0.92      0.89        13
+                Thailand       1.00      1.00      1.00        20
+
+                accuracy                           0.93       138
+               macro avg       0.93      0.93      0.93       138
+            weighted avg       0.93      0.93      0.93       138

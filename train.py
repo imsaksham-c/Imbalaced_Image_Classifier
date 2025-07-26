@@ -3,11 +3,10 @@ Image Classification Training Script
 ==========================================
 
 This script provides a comprehensive training pipeline for temple image classification
-using various deep learning models (ResNet50, ResNeXt50, EfficientNet-B3) with
-advanced training strategies including staged unfreezing and different loss functions.
+using ResNet50 with advanced training strategies including staged unfreezing and different loss functions.
 
 Features:
-- Multiple model architectures (ResNet50, ResNeXt50, EfficientNet-B3)
+- ResNet50 model architecture
 - Staged unfreezing strategies for transfer learning
 - Weighted Cross Entropy and Focal Loss support
 - Comprehensive training monitoring and visualization
@@ -16,8 +15,8 @@ Features:
 
 Examples:
   python train.py --model resnet50 --batch_size 32 --epochs 50
-  python train.py --model efficientnet_b3 --loss focalloss --unfreeze 2
-  python train.py --model resnext50 --fc_layers 512 256 --unfreeze 1
+  python train.py --model resnet50 --loss focalloss --unfreeze 2
+  python train.py --model resnet50 --fc_layers 512 256 --unfreeze 1
 """
 
 import torch
@@ -25,26 +24,25 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import numpy as np
-import pandas as pd
 from sklearn.metrics import classification_report
 import argparse
-import os
 import json
 import warnings
 import datetime
+import os
 
-# Import utility modules
 from utils import (
-    FocalLoss, plot_training_history, plot_confusion_matrix,
-    TempleDataset, load_processed_dataset, calculate_class_weights, 
-    get_weighted_sampler, get_transforms, get_model, set_trainable_layers,
-    train_epoch, validate_epoch
+    FocalLoss, plot_training_history, plot_confusion_matrix, plot_per_class_metrics, plot_precision_recall_roc,
+    get_model, set_trainable_layers, train_epoch, validate_epoch,
+    cleanup_experiment_models
+)
+from utils.dataset import (
+    TempleDataset, get_transforms, load_processed_dataset,
+    calculate_class_weights, get_weighted_sampler
 )
 
-# Suppress warnings for cleaner output
 warnings.filterwarnings('ignore')
 
-# Global device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"🚀 Using device: {device}")
 
@@ -147,7 +145,7 @@ def train_model(args):
     # ============================================================================
     # MODEL INITIALIZATION
     # ============================================================================
-    print(f"\n🤖 Initializing {args.model} model...")
+    print(f"\n�� Initializing {args.model} model...")
     try:
         model = get_model(args.model, num_classes, fc_layers=args.fc_layers, device=device)
         # Add device attribute to model for training functions
@@ -190,7 +188,6 @@ def train_model(args):
     print("      0 - Only classifier layers trainable")
     print("      1 - Unfreezes deepest backbone block at stage 2 (after 15 epochs)")
     print("      2 - Unfreezes stage 2 after 15 and stage 3 after 30 epochs")
-    print("      3 - All layers trainable from start")
     
     # Initialize tracking variables
     train_losses = []
@@ -221,8 +218,6 @@ def train_model(args):
                 stage = 2
             else:
                 stage = 3
-        else:  # unfreeze == 3
-            stage = 3  # Always stage 3 (all layers)
         
         # Set trainable layers for current stage
         set_trainable_layers(model, stage, args.unfreeze)
@@ -262,6 +257,7 @@ def train_model(args):
         if f1_weighted > best_f1:
             best_f1 = f1_weighted
             patience_counter = 0
+            # Save model state dict in device-agnostic way
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -288,10 +284,25 @@ def train_model(args):
     print("="*60)
     
     # Load best model and evaluate
-    checkpoint = torch.load(os.path.join(models_dir, f'best_model_{args.model}_unfreeze{args.unfreeze}.pth'))
+    checkpoint = torch.load(os.path.join(models_dir, f'best_model_{args.model}_unfreeze{args.unfreeze}.pth'), map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
     val_loss, val_acc, f1_weighted, f1_macro, predictions, true_labels = validate_epoch(
         model, val_loader, criterion)
+
+    # Get predicted probabilities for ROC/PR curves
+    model.eval()
+    all_probs = []
+    with torch.no_grad():
+        for images, _ in val_loader:
+            images = images.to(device)
+            outputs = model(images)
+            probs = torch.softmax(outputs, dim=1)
+            all_probs.append(probs.cpu().numpy())
+    y_score = np.concatenate(all_probs, axis=0)
+
+    # Plot per-class metrics, precision-recall, and ROC curves
+    plot_per_class_metrics(true_labels, predictions, class_names, plots_dir)
+    plot_precision_recall_roc(true_labels, y_score, class_names, plots_dir)
     
     print(f"🤖 Model: {args.model}")
     print(f"🔄 Unfreeze Mode: {args.unfreeze}")
@@ -368,6 +379,40 @@ def train_model(args):
         json.dump(config, f, indent=2)
     
     # ============================================================================
+    # CHECKPOINT CLEANUP
+    # ============================================================================
+    print("\n🧹 Cleaning model checkpoints...")
+    cleanup_summary = cleanup_experiment_models(experiment_dir)
+    
+    if cleanup_summary:
+        print(f"✅ Checkpoint cleanup completed!")
+        print(f"   📁 Files processed: {cleanup_summary['files_processed']}")
+        print(f"   📉 Space saved: {cleanup_summary['total_space_saved']:.1f} MB")
+    else:
+        print("⚠️  No checkpoints found to clean")
+    
+    # =========================================================================
+    # SAVE ONLY CLEANED MODEL AS 'final_model.pth'
+    # =========================================================================
+    import shutil
+    from utils.checkpoint_cleanup import cleanup_checkpoint
+    
+    # Path to the best model
+    best_model_path = os.path.join(models_dir, f'best_model_{args.model}_unfreeze{args.unfreeze}.pth')
+    final_model_path = os.path.join(models_dir, 'final_model.pth')
+    # Clean the checkpoint and save as 'final_model.pth'
+    cleanup_checkpoint(best_model_path, final_model_path)
+
+    # Delete all other .pth model files in the models directory except 'final_model.pth'
+    for fname in os.listdir(models_dir):
+        fpath = os.path.join(models_dir, fname)
+        if fpath != final_model_path and fname.endswith('.pth'):
+            os.remove(fpath)
+
+    print(f"\n✅ Only cleaned model saved: {final_model_path}")
+    print(f"All other model files in {models_dir} have been deleted.")
+
+    # ============================================================================
     # FINAL SUMMARY
     # ============================================================================
     print(f"\n🎉 Training completed successfully!")
@@ -396,13 +441,13 @@ def main():
     
     # Model arguments
     parser.add_argument('--model', type=str, 
-                       choices=['resnet50', 'resnext50', 'efficientnet_b3'], 
-                       default='resnet50', help='Model architecture')
+                       choices=['resnet50', 'efficientnet_b4'], 
+                       default='resnet50', help='Model architecture (resnet50 or efficientnet_b4)')
     parser.add_argument('--fc_layers', type=int, nargs='+', default=None,
                        help='Custom FC layer sizes (e.g., 512 256 for 2 hidden layers)')
     
     # Training arguments
-    parser.add_argument('--batch_size', type=int, default=16, help='Batch size')
+    parser.add_argument('--batch_size', type=int, default=32, help='Batch size')
     parser.add_argument('--epochs', type=int, default=50, help='Number of epochs')
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-4, help='Weight decay')
@@ -413,8 +458,8 @@ def main():
     parser.add_argument('--gamma', type=float, default=2.0, help='Focal loss gamma parameter')
     
     # Transfer learning arguments
-    parser.add_argument('--unfreeze', type=int, choices=[0, 1, 2, 3], 
-                       default=0, help='Unfreezing strategy (0-3)')
+    parser.add_argument('--unfreeze', type=int, choices=[0, 1, 2], 
+                       default=0, help='Unfreezing strategy (0-2)')
     
     # Output arguments
     parser.add_argument('--save_dir', type=str, default='./models', 

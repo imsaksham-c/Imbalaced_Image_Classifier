@@ -1,8 +1,8 @@
-# Temple Image Classification Project
+# Image Classification Project
 
 This project provides a complete pipeline for temple image classification using a custom, multi-class dataset. The repository includes advanced preprocessing techniques, sophisticated training strategies, and comprehensive solutions for handling class imbalance and improving model convergence.
 
-### 📄 Temple Image Classification Report
+### 📄 Image Classification Report
 
 For comprehensive details, explanations, results, and the overall architecture, please refer to the Temple Image Classification Report PDF included in this repository.
 
